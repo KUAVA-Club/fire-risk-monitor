@@ -1,5 +1,4 @@
 from fastapi import APIRouter
-# from app.schemas.fire_schema import FireCreate
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
 from fastapi.responses import HTMLResponse
@@ -12,10 +11,9 @@ import time
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
-fake_db = []
 
 
-# READ ALL
+
 @router.get("/fire", response_class=HTMLResponse)
 def home(request: Request):
     data = getData(13,32)
@@ -31,7 +29,6 @@ def home(request: Request):
          "wind_spped" : float(data["wind_speed_10m"][0])}
     )
 
-# READ ONE
 @router.get("/fire/from")
 def get_fire(request: Request, lat: float, lon: float):
     

@@ -4,4 +4,4 @@ from routes.fire import router as fire_router
 app = FastAPI()
 
 app.include_router(fire_router)
-# app.mount("/stati c", StaticFiles(directory="app/static"), name="static")
+# app.mount("/static", StaticFiles(directory="app/static"), name="static")

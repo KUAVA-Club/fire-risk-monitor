@@ -1,3 +1,6 @@
 .idea
 .venv
 .idea/
+__pychache__/
+app/__pychache__/
+app/routes/__pychache__/

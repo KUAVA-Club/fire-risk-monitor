@@ -52,6 +52,7 @@ def getData(lat,long):
     hourly_data["wind_speed_10m"] = hourly_wind_speed_10m
 
     datas = {}
+  
     # get timestamps
     times = pd.to_datetime(hourly_data["date"])
 
