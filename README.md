@@ -5,7 +5,7 @@ Canadian FWI system (Van Wagner & Pickett, 1985) and Open-Meteo weather data.
 
 ## Setup
 ```bash
-pip install httpx python-dotenv
+pip install httpx python-dotenv tenacity
 ```
 
 ## Usage

@@ -3,10 +3,17 @@ import asyncio
 import math
 from dotenv import load_dotenv
 from datetime import datetime
+from tenacity import retry, stop_after_attempt, wait_exponential
+
 
 # ─────────────────────────────────────────
 # STEP 1: Fetch raw weather from Open-Meteo
 # ─────────────────────────────────────────
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=2, max=30)
+)
 
 async def fetch_weather(lat: float, lon: float) -> dict:
     """
