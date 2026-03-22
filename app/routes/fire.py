@@ -8,7 +8,7 @@ router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
 
-@router.get("/fire/from")
+@router.get("/map")
 def get_fire(request: Request):
 
     return templates.TemplateResponse(
