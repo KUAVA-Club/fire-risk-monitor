@@ -1,3 +1,14 @@
+// Function to fetch data from them backend with some location
+async function fetchFireData(lat, lon) {
+  try {
+    const response = await fetch(`/fire/data?lat=${lat}&lon=${lon}`);
+    return await response.json();
+  } catch (error) {
+    console.error(error);
+    return { temp: "Err", wind_speed: "Err" };
+  }
+}
+
 // Create map
 var map = L.map('map', {
   preferCanvas: true,
@@ -48,13 +59,16 @@ function drawGrid() {
       }).addTo(gridLayer);
 
       (function(cb, lat, lng, gs) {
-        rect.on('click', function(e) {
+        rect.on('click', async function(e) {
           L.DomEvent.stopPropagation(e);
-
+          
           if (gs <= FINEST_SIZE) {
             // At finest grid — show popup with center coords
             var centerLat = lat + gs / 2;
             var centerLng = lng + gs / 2;
+
+            const data = await fetchFireData(centerLat, centerLng);
+
             L.popup()
               .setLatLng([centerLat, centerLng])
             .setContent(
@@ -62,8 +76,8 @@ function drawGrid() {
               '<b>Cell Center</b><br>' +
               '&#127757; Lat: ' + centerLat.toFixed(5) + '<br>' +
               '&#127757; Lng: ' + centerLng.toFixed(5) + '<br>' +
-              '&#128293; Temperature: <span id="popup-temp">{{temp}}</span> °C<br>' +
-              '&#127788; Wind Speed: <span id="popup-wind">{{wind_speed}}</span> km/h<br>' +
+              '&#128293; Temperature: <span id="popup-temp">'+data.temp+'</span> °C<br>' +
+              '&#127788; Wind Speed: <span id="popup-wind">'+ data.wind_speed + '</span> km/h<br>' +
               '</div>'
             )
               .openOn(map);

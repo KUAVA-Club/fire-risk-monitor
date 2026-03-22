@@ -9,17 +9,18 @@ templates = Jinja2Templates(directory="templates")
 
 
 @router.get("/fire/from")
-def get_fire(request: Request, lat: float, lon: float):
-    
-    data = getData(lat,lon)
+def get_fire(request: Request):
 
     return templates.TemplateResponse(
         "index.html",
-        {"request": request, 
-         "temp" : float(data["temperature_2m"]),
-         "soil_temp" : float(data["soil_temperature_0cm"]),
-         "soil_mosture": float(data["soil_moisture_0_to_1cm"]),
-         "relet_humidity" : float(data["relative_humidity_2m"]), 
-         "precipitaion" : float(data["precipitation"]),
-         "wind_speed" : float(data["wind_speed_10m"])}
+        {"request": request}
     )
+
+@router.get("/fire/data")
+def get_fire_data(lat: float, lon: float):
+    data = getData(lat, lon)
+
+    return {
+        "temp" : round(float(data["temperature_2m"]), 2),
+        "wind_speed" : round(float(data["wind_speed_10m"]),2)
+    }
