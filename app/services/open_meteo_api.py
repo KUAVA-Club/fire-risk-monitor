@@ -63,6 +63,8 @@ def getData(lat,long):
     diff = times - now
     idx = abs(diff).argmin()
 
+    datas["lat"] = lat
+    datas["long"] = long
     datas["temperature_2m"] = hourly_temperature_2m[idx]
     datas["soil_temperature_0cm"] = hourly_soil_temperature_0cm[idx]
     datas["soil_moisture_0_to_1cm"] = hourly_soil_moisture_0_to_1cm[idx]
