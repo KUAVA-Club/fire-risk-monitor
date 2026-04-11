@@ -1,13 +1,23 @@
-// async function fetchFireData(lat, lon) {
-//   const randomValue = () => Math.floor(70 + Math.random() * 21); // 70-90 inclusive
+// ============================================================
+// DATA FETCHING
+// ============================================================
 
-//   return {
-//     temp: randomValue(),
-//     wind_speed: randomValue()
-//   };
-// }
+// Fetches weather/fire data for a specific lat/lon from the backend
+async function fetchFireData(lat, lon) {
+  try {
+    const response = await fetch(`/fire/data?lat=${lat}&lon=${lon}`);
+    const data = await response.json();
+    return {
+      temp:       data.temp       ?? "Err",
+      wind_speed: data.wind_speed ?? "Err"
+    };
+  } catch (error) {
+    console.error(error);
+    return { temp: "Err", wind_speed: "Err" };
+  }
+}
 
-
+// Loads pre-computed danger zones from the backend and paints them on the map at startup
 async function fetchAndLoadDangerZones() {
   try {
     const response = await fetch('/fire/dangerZones');
@@ -25,6 +35,7 @@ async function fetchAndLoadDangerZones() {
 
       clickedCells[key] = { fri, style };
 
+      // Only show in the sidebar if risk is high enough
       if (fri >= 70) {
         addToSidebar(lat, lng, fri, style);
       }
@@ -37,25 +48,19 @@ async function fetchAndLoadDangerZones() {
   }
 }
 
-async function fetchFireData(lat, lon) {
-  try {
-    const response = await fetch(`/fire/data?lat=${lat}&lon=${lon}`);
-    const data = await response.json();
-    return {
-      temp:       data.temp       ?? "Err",
-      wind_speed: data.wind_speed ?? "Err"
-    };
-  } catch (error) {
-    console.error(error);
-    return { temp: "Err", wind_speed: "Err" };
-  }
-}
 
+// ============================================================
+// FIRE RISK INDEX (FRI) LOGIC
+// ============================================================
+
+// Calculates FRI (0–100) from temperature and wind speed
+// Weighted: temp counts 60%, wind 40%
 function getFRIFromData(temp, windSpeed) {
   if (temp === "Err" || windSpeed === "Err") return null;
   return Math.min(100, (temp * 0.6) + (windSpeed * 0.4));
 }
 
+// Maps an FRI score to a color, risk label, and recommended action
 function getFRIStyle(fri) {
   if (fri <= 24) return { color: "#00ff00", label: "LOW",       action: "Log only (review EOD)" };
   if (fri <= 49) return { color: "#ffff00", label: "MODERATE",  action: "Daily digest + forecast review" };
@@ -64,14 +69,28 @@ function getFRIStyle(fri) {
   return          { color: "#8B0000",       label: "EXTREME",   action: "All channels + evacuation readiness" };
 }
 
+
+// ============================================================
+// CELL STATE TRACKING
+// ============================================================
+
+// Stores cells the user has clicked and their FRI data, keyed by lat/lng
 var clickedCells = {};
 
+// Unique string key for a grid cell based on its center coordinates
 function cellKey(lat, lng) {
   return lat.toFixed(5) + ',' + lng.toFixed(5);
 }
 
+
+// ============================================================
+// SIDEBAR
+// ============================================================
+
+// Keeps track of zones shown in the sidebar so we don't add duplicates
 var dangerousZones = [];
 
+// Adds a high-risk zone card to the sidebar panel
 function addToSidebar(lat, lng, fri, style) {
   var key = cellKey(lat, lng);
   var exists = dangerousZones.some(z => z.key === key);
@@ -92,16 +111,50 @@ function addToSidebar(lat, lng, fri, style) {
   document.getElementById('zone-list').appendChild(card);
 }
 
+// Rebuilds the sidebar from scratch (used when a zone is removed)
+function rebuildSidebar() {
+  var list = document.getElementById('zone-list');
+  list.innerHTML = '';
+  dangerousZones.forEach(function(z) {
+    var card = document.createElement('div');
+    card.className = 'zone-card';
+    card.style.borderColor = z.style.color;
+    card.innerHTML =
+      '<span class="zone-label" style="color:' + z.style.color + '">' + z.style.label + '</span><br>' +
+      'FRI: ' + z.fri.toFixed(1) + '<br>' +
+      '🌍 ' + z.lat.toFixed(5) + ', ' + z.lng.toFixed(5) + '<br>' +
+      '⚙️ ' + z.style.action;
+    list.appendChild(card);
+  });
+  document.getElementById('sidebar-empty').style.display =
+    dangerousZones.length === 0 ? 'block' : 'none';
+}
+
+
+// ============================================================
+// MAP SETUP
+// ============================================================
+
+// Initialize the Leaflet map centered on the world
 var map = L.map('map', {
   preferCanvas: true,
   minZoom: 2
 }).setView([20, 0], 2);
+
+// Use OpenTopoMap tiles for a terrain-style basemap
 L.tileLayer('https://tile.opentopomap.org/{z}/{x}/{y}.png', {
   attribution: '&copy; OpenTopoMap'
 }).addTo(map);
 
+// Separate layer group for the grid so we can clear and redraw it easily
 var gridLayer = L.layerGroup().addTo(map);
 
+
+// ============================================================
+// GRID DRAWING
+// ============================================================
+
+// Returns the appropriate cell size (in degrees) based on current zoom level
 function getGridSize() {
   var zoom = map.getZoom();
   if (zoom <= 3)  return 10;
@@ -112,24 +165,24 @@ function getGridSize() {
   return 0.05;
 }
 
+// The smallest grid resolution — clicking a cell at this size triggers a data fetch
 var FINEST_SIZE = 0.05;
 
+// If set, draws a 3x3 focused grid around a specific location instead of the full viewport
 var focusGrid = null;
 
+// Main grid drawing function — clears and redraws all visible cells
 function drawGrid() {
   gridLayer.clearLayers();
   const gridSize = getGridSize();
-  let bounds;
 
   if (focusGrid) {
+    // Draw a tight 3x3 grid centered on the focused location
     const { lat, lng, size } = focusGrid;
-
     const north = lat + size * 1.5;
     const south = lat - size * 1.5;
     const west  = lng - size * 1.5;
     const east  = lng + size * 1.5;
-
-    bounds = L.latLngBounds([south, west], [north, east]);
 
     for (let i = 0; i < 3; i++) {
       const latStep = north - size * (i + 1);
@@ -139,7 +192,8 @@ function drawGrid() {
       }
     }
   } else {
-    bounds = map.getBounds();
+    // Draw a grid covering the entire visible map area
+    const bounds = map.getBounds();
     const south = bounds.getSouth();
     const north = bounds.getNorth();
     const west  = bounds.getWest();
@@ -153,17 +207,19 @@ function drawGrid() {
   }
 }
 
+// Draws a single grid cell rectangle and wires up its click behavior
 function drawCell(lat, lng, gs) {
   const centerLat = lat + gs / 2;
   const centerLng = lng + gs / 2;
   const key = cellKey(centerLat, centerLng);
-  const saved = clickedCells[key];
+  const saved = clickedCells[key]; // Check if this cell already has FRI data
 
   const cellBounds = [
     [lat, lng],
     [lat + gs, lng + gs]
   ];
 
+  // Color the cell if it has saved data, otherwise show it as a dim placeholder
   const rect = L.rectangle(cellBounds, {
     color:       saved ? saved.style.color : "#555",
     weight: 1,
@@ -171,16 +227,18 @@ function drawCell(lat, lng, gs) {
     fillOpacity: saved ? 0.45 : 0.15
   }).addTo(gridLayer);
 
-  // attach your existing click handler
+  // IIFE used here to capture the current loop variables in the async click handler
   (function(cb, lat, lng, gs, rect) {
     rect.on('click', async function(e) {
       L.DomEvent.stopPropagation(e);
 
       if (gs <= FINEST_SIZE) {
+        // Finest zoom: clicking fetches real fire data for that cell
         const centerLat = lat + gs / 2;
         const centerLng = lng + gs / 2;
         const key = cellKey(centerLat, centerLng);
 
+        // If already clicked, toggle it off and remove from sidebar
         if (clickedCells[key]) {
           delete clickedCells[key];
           rect.setStyle({ color: "#555", fillColor: "#555", fillOpacity: 0.15 });
@@ -189,6 +247,7 @@ function drawCell(lat, lng, gs) {
           return;
         }
 
+        // Fetch fire data, compute FRI, and color the cell accordingly
         const data = await fetchFireData(centerLat, centerLng);
         const fri = getFRIFromData(data.temp, data.wind_speed);
         const style = fri !== null
@@ -202,6 +261,7 @@ function drawCell(lat, lng, gs) {
           addToSidebar(centerLat, centerLng, fri, style);
         }
 
+        // Show a popup with the full breakdown for this cell
         const tempDisplay = (data.temp !== "Err") ? data.temp.toFixed(1) + ' °C' : 'Err';
         const windDisplay = (data.wind_speed !== "Err") ? data.wind_speed.toFixed(1) + ' km/h' : 'Err';
         const friDisplay  = (fri !== null) ? 'FRI: ' + fri.toFixed(1) + ' (' + style.label + ')' : 'FRI: N/A';
@@ -221,33 +281,23 @@ function drawCell(lat, lng, gs) {
           )
           .openOn(map);
       } else {
+        // Coarser zoom: clicking zooms into that cell instead of fetching data
         map.fitBounds(cb, { animate: true, padding: [10, 10] });
       }
     });
   })(cellBounds, lat, lng, gs, rect);
 }
 
-function rebuildSidebar() {
-  var list = document.getElementById('zone-list');
-  list.innerHTML = '';
-  dangerousZones.forEach(function(z) {
-    var card = document.createElement('div');
-    card.className = 'zone-card';
-    card.style.borderColor = z.style.color;
-    card.innerHTML =
-      '<span class="zone-label" style="color:' + z.style.color + '">' + z.style.label + '</span><br>' +
-      'FRI: ' + z.fri.toFixed(1) + '<br>' +
-      '🌍 ' + z.lat.toFixed(5) + ', ' + z.lng.toFixed(5) + '<br>' +
-      '⚙️ ' + z.style.action;
-    list.appendChild(card);
-  });
-  document.getElementById('sidebar-empty').style.display =
-    dangerousZones.length === 0 ? 'block' : 'none';
-}
 
+// ============================================================
+// MAP EVENTS & CONTROLS
+// ============================================================
+
+// Redraw the grid whenever the user pans or zooms
 drawGrid();
 map.on('moveend zoomend', drawGrid);
 
+// "Go" button: fly to entered coordinates and show a focused 3x3 grid
 document.getElementById('go-btn').onclick = function () {
   const lat = parseFloat(document.getElementById('lat-input').value);
   const lng = parseFloat(document.getElementById('lng-input').value);
@@ -258,7 +308,6 @@ document.getElementById('go-btn').onclick = function () {
   }
 
   const size = FINEST_SIZE;
-
   focusGrid = { lat, lng, size };
 
   map.flyTo([lat, lng], 12, {
@@ -269,4 +318,5 @@ document.getElementById('go-btn').onclick = function () {
   drawGrid();
 };
 
+// Load any pre-existing danger zones from the server when the page first opens
 fetchAndLoadDangerZones();
