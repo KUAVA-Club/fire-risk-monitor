@@ -6,6 +6,7 @@ from database.crud.weather import create_weather_reading
 from database.crud.grid import create_grid_zone
 from database.crud.weather import get_all_weather
 from services.risk_calculator import calculate_fire_risk
+from services.most_dangerous_zones import get_top_5_danger_zones;
 from core.logger import logger
 from fastapi.responses import JSONResponse
 
@@ -57,3 +58,9 @@ def get_fire_data(lat: float, lon: float):
         "risk_index": risk["risk_index"],
         "alert_level": risk["alert_level"]
     }
+
+
+@router.get("/fire/dangerZones")
+def get_danger_zones():
+    data = get_top_5_danger_zones()
+    return data
