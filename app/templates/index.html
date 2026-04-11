@@ -3,16 +3,25 @@
 <head>
   <meta charset="utf-8">
   <title>Wildfire Monitoring Grid</title>
-
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
   <link rel="stylesheet" href="../static/css/style.css">
 </head>
-
 <body>
     
-    <div id="map"></div>
-    
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="../static/js/script.js"></script>
+  <div id="map"></div>
+  <div id="sidebar">
+    <h3>🔥 Dangerous Zones</h3>
+    <div id="sidebar-empty">No dangerous zones yet.</div>
+    <div id="zone-list"></div>
+  </div>
+
+  <div id="top-bar">
+    <input id="lat-input" type="number" step="any" placeholder="Latitude">
+    <input id="lng-input" type="number" step="any" placeholder="Longitude">
+    <button id="go-btn">Go</button>
+  </div>
+  
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="../static/js/script.js"></script>
 </body>
 </html>
