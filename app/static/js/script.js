@@ -19,17 +19,17 @@ async function fetchFireData(lat, lon) {
 
 // Loads pre-computed danger zones from the backend and paints them on the map at startup
 async function fetchAndLoadDangerZones() {
+  var foundSomeData = false;
   try {
     const response = await fetch('/fire/dangerZones');
     const zones = await response.json();
-
     for (const zone of zones) {
       const lat = zone.lat ?? zone.latitude;
       const lng = zone.lon ?? zone.longitude ?? zone.lng;
       const fri = zone.fri ?? getFRIFromData(zone.temp, zone.wind_speed);
 
       if (lat == null || lng == null || fri == null) continue;
-
+      foundSomeData = true;
       const style = getFRIStyle(fri);
       const key   = cellKey(lat, lng);
 
@@ -39,6 +39,10 @@ async function fetchAndLoadDangerZones() {
       if (fri >= 70) {
         addToSidebar(lat, lng, fri, style);
       }
+    }
+
+    if (!foundSomeData) {
+      document.getElementById("sidebar-empty").textContent = "No serious fire risks are present.";
     }
 
     drawGrid();
