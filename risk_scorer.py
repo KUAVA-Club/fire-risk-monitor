@@ -6,27 +6,12 @@ from datetime import datetime
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 
-# ─────────────────────────────────────────
-# STEP 1: Fetch raw weather from Open-Meteo
-# ─────────────────────────────────────────
-
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=2, max=30)
 )
 
 async def fetch_weather(lat: float, lon: float) -> dict:
-    """
-    Fetch raw weather data from Open-Meteo API.
-
-    Parameters:
-    lat (float): latitude of location
-    lon (float): longitude of location
-
-    Returns:
-    dict: JSON response from Open-Meteo API
-
-    """
     url = "https://api.open-meteo.com/v1/forecast"
     params = {
         "current": "temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation",
@@ -42,23 +27,7 @@ async def fetch_weather(lat: float, lon: float) -> dict:
         r.raise_for_status()
         return r.json()
 
-# ─────────────────────────────────────────
-# STEP 2: Compute FWI from raw weather
-# ─────────────────────────────────────────
 def compute_ffmc(temp: float, rh: float, wind: float, rain: float, ffmc_prev: float = 85.0) -> float:
-    """
-    Compute the Fine Fuel Moisture Code (FFMC) from raw weather data.
-
-    Parameters:
-    temp (float): temperature in degrees Celsius
-    rh (float): relative humidity in percent
-    wind (float): wind speed in kilometers per hour
-    rain (float): rainfall in millimeters
-    ffmc_prev (float, optional): previous FFMC value, defaults to 85.0
-
-    Returns:
-    float: FFMC value
-    """
     mo = 147.2 * (101 - ffmc_prev) / (59.5 + ffmc_prev)
     if rain > 0.5:
         rf = rain - 0.5
@@ -82,20 +51,6 @@ def compute_ffmc(temp: float, rh: float, wind: float, rain: float, ffmc_prev: fl
     return 59.5 * (250 - m) / (147.2 + m)
 
 def compute_dmc(temp: float, rh: float, rain: float, dmc_prev: float = 6.0, month: int = 6) -> float: 
-    """Duff Moisture Code — organic layer dryness.
-
-    Compute the Duff Moisture Code (DMC) from raw weather data.
-
-    Parameters:
-    temp (float): temperature in degrees Celsius
-    rh (float): relative humidity in percent
-    rain (float): rainfall in millimeters
-    dmc_prev (float, optional): previous DMC value, defaults to 6.0
-    month (int, optional): current month of the year, defaults to 6
-
-    Returns:
-    float: DMC value
-    """
     day_length = [6.5,7.5,9.0,12.8,13.9,13.9,12.4,10.9,9.4,8.0,7.0,6.0]
     dl = day_length[month - 1]
     if rain > 1.5:
@@ -111,16 +66,6 @@ def compute_dmc(temp: float, rh: float, rain: float, dmc_prev: float = 6.0, mont
     return dmc_prev
 
 def compute_dc(temp: float, rain: float, dc_prev: float = 15.0, month: int = 6) -> float:
-    """Drought Code — deep layer dryness.
-
-    Parameters:
-    temp (float): temperature in degrees Celsius
-    rain (float): rainfall in millimeters
-    dc_prev (float, optional): previous DC value, defaults to 15.0
-    month (int, optional): current month of the year, defaults to 6
-
-    Returns:
-    float: DC value"""
     lf = [-1.6,-1.6,-1.6,0.9,3.8,5.8,6.4,5.0,2.4,0.4,-1.6,-1.6]
     fl = lf[month - 1]
     if rain > 2.8:
@@ -135,46 +80,18 @@ def compute_dc(temp: float, rain: float, dc_prev: float = 15.0, month: int = 6) 
     return dc_prev
 
 def compute_isi(wind: float, ffmc: float) -> float:
-    """Initial Spread Index — how fast fire spreads.
-    Compute the Initial Spread Index (ISI) from wind speed and Fine Fuel Moisture Code (FFMC).
-
-    Parameters:
-    wind (float): wind speed in kilometers per hour
-    ffmc (float): Fine Fuel Moisture Code value
-
-    Returns:
-    float: IS value"""
     fm = 147.2 * (101 - ffmc) / (59.5 + ffmc)
     fw = math.exp(0.05039 * wind)
     ff = 91.9 * math.exp(-0.1386 * fm) * (1 + fm**5.31 / 4.93e7)
     return 0.208 * fw * ff
 
 def compute_bui(dmc: float, dc: float) -> float:
-    """Build-Up Index — total fuel available.
-    Compute the Build-Up Index (BUI) from Duff Moisture Code (DMC) and Drought Code (DC) values.
-
-    Parameters:
-    dmc (float): Duff Moisture Code value
-    dc (float): Drought Code value
-
-    Returns:
-    float: BUI value
-    """
     if dmc <= 0.4 * dc:
         return 0.8 * dmc * dc / (dmc + 0.4 * dc)
     else:
         return dmc - (1 - 0.8 * dc / (dmc + 0.4 * dc)) * (0.92 + (0.0114 * dmc)**1.7)
 
 def compute_fwi(isi: float, bui: float) -> float:
-    """Final Fire Weather Index.
-    Compute the Final Fire Weather Index (FWI) from the Initial Spread Index (ISI) and Build-Up Index (BUI) values.
-
-    Parameters:
-    isi (float): Initial Spread Index value
-    bui (float): Build-Up Index value
-
-    Returns:
-    float: FWI value"""
     if bui <= 80:
         fd = 0.626 * bui**0.809 + 2.0
     else:
@@ -185,7 +102,6 @@ def compute_fwi(isi: float, bui: float) -> float:
     return b
 
 def calculate_fwi_from_weather(temp: float, rh: float, wind: float, rain: float, month: int) -> float:
-    """Chain all FWI sub-indices together and return final FWI score."""
     ffmc = compute_ffmc(temp, rh, wind, rain)
     dmc  = compute_dmc(temp, rh, rain, month=month)
     dc   = compute_dc(temp, rain, month=month)
@@ -194,9 +110,6 @@ def calculate_fwi_from_weather(temp: float, rh: float, wind: float, rain: float,
     fwi  = compute_fwi(isi, bui)
     return round(fwi, 2)
 
-# ─────────────────────────────────────────
-# STEP 3: FRI scoring + alert level
-# ─────────────────────────────────────────
 
 def normalize_fwi(raw_fwi: float) -> float:
     return min(raw_fwi, 100.0)
@@ -212,10 +125,6 @@ def get_alert_level(fri: float) -> str:
     if fri < 70: return "HIGH"
     if fri < 85: return "VERY_HIGH"
     return "EXTREME"
-
-# ─────────────────────────────────────────
-# STEP 4: Main entry point
-# ─────────────────────────────────────────
 
 async def get_risk(lat: float, lon: float, ndvi: float) -> dict:
     data = await fetch_weather(lat, lon)
@@ -249,6 +158,17 @@ async def get_risk(lat: float, lon: float, ndvi: float) -> dict:
         "rain_mm": rain,
         "fwi": fwi,
         "fri_score": fri,
+        "alert_level": level
+    }
+
+def calculate_fire_risk(temperature, wind_speed, humidity, precipitation, soil_moisture) -> dict:
+    month = datetime.now().month
+    fwi = calculate_fwi_from_weather(temperature, humidity, wind_speed, precipitation, month)
+    ndvi = 1 - (soil_moisture * 2)  # TODO: replace with actual NDVI from API
+    fri = compute_fri(fwi, ndvi)
+    level = get_alert_level(fri)
+    return {
+        "risk_index": fri,
         "alert_level": level
     }
 
