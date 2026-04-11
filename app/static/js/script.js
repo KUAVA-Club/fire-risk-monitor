@@ -7,6 +7,36 @@
 //   };
 // }
 
+
+async function fetchAndLoadDangerZones() {
+  try {
+    const response = await fetch('/fire/dangerZones');
+    const zones = await response.json();
+
+    for (const zone of zones) {
+      const lat = zone.lat ?? zone.latitude;
+      const lng = zone.lon ?? zone.longitude ?? zone.lng;
+      const fri = zone.fri ?? getFRIFromData(zone.temp, zone.wind_speed);
+
+      if (lat == null || lng == null || fri == null) continue;
+
+      const style = getFRIStyle(fri);
+      const key   = cellKey(lat, lng);
+
+      clickedCells[key] = { fri, style };
+
+      if (fri >= 70) {
+        addToSidebar(lat, lng, fri, style);
+      }
+    }
+
+    drawGrid();
+
+  } catch (error) {
+    console.error('Failed to load danger zones:', error);
+  }
+}
+
 async function fetchFireData(lat, lon) {
   try {
     const response = await fetch(`/fire/data?lat=${lat}&lon=${lon}`);
@@ -239,3 +269,4 @@ document.getElementById('go-btn').onclick = function () {
   drawGrid();
 };
 
+fetchAndLoadDangerZones();
