@@ -1,31 +1,5 @@
-import httpx
-import asyncio
 import math
-from dotenv import load_dotenv
 from datetime import datetime
-from tenacity import retry, stop_after_attempt, wait_exponential
-
-
-@retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=2, max=30)
-)
-
-async def fetch_weather(lat: float, lon: float) -> dict:
-    url = "https://api.open-meteo.com/v1/forecast"
-    params = {
-        "current": "temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation",
-        "latitude": lat,
-        "longitude": lon,
-        "daily": "temperature_2m_max,relative_humidity_2m_mean,wind_speed_10m_max,precipitation_sum",
-        "wind_speed_unit": "kmh",
-        "timezone": "UTC",
-        "forecast_days": 1
-    }
-    async with httpx.AsyncClient() as client:
-        r = await client.get(url, params=params, timeout=10)
-        r.raise_for_status()
-        return r.json()
 
 def compute_ffmc(temp: float, rh: float, wind: float, rain: float, ffmc_prev: float = 85.0) -> float:
     mo = 147.2 * (101 - ffmc_prev) / (59.5 + ffmc_prev)
@@ -126,40 +100,6 @@ def get_alert_level(fri: float) -> str:
     if fri < 85: return "VERY_HIGH"
     return "EXTREME"
 
-async def get_risk(lat: float, lon: float, ndvi: float) -> dict:
-    data = await fetch_weather(lat, lon)
-    daily = data["daily"]
-
-    temp  = daily["temperature_2m_max"][0]
-    rh    = daily["relative_humidity_2m_mean"][0]
-    wind  = daily["wind_speed_10m_max"][0]
-    rain  = daily["precipitation_sum"][0] or 0.0
-
-    temp_curr = data["current"]["temperature_2m"]
-    rh_curr   = data["current"]["relative_humidity_2m"]
-    wind_curr = data["current"]["wind_speed_10m"]
-    rain_curr = data["current"]["precipitation"]
-
-    current_month = datetime.now().month
-
-    fwi   = calculate_fwi_from_weather(temp, rh, wind, rain, month=current_month)
-    fri   = compute_fri(fwi, ndvi)
-    level = get_alert_level(fri)
-
-    return {
-        "temperature_c_curr": temp_curr,
-        "humidity_pct_curr": rh_curr,
-        "wind_kmh_curr": wind_curr,
-        "rain_mm_curr": rain_curr,
-
-        "temperature_c": temp,
-        "humidity_pct": rh,
-        "wind_kmh": wind,
-        "rain_mm": rain,
-        "fwi": fwi,
-        "fri_score": fri,
-        "alert_level": level
-    }
 
 def calculate_fire_risk(temperature, wind_speed, humidity, precipitation, soil_moisture) -> dict:
     month = datetime.now().month
@@ -172,10 +112,3 @@ def calculate_fire_risk(temperature, wind_speed, humidity, precipitation, soil_m
         "alert_level": level
     }
 
-if __name__ == "__main__":
-    result = asyncio.run(get_risk(
-        lat=37.7749,   # San Francisco
-        lon=-122.4194,
-        ndvi=0.3 # TODO: replace with real sensor reading in production
-    ))
-    print(result)
