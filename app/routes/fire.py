@@ -12,6 +12,11 @@ from fastapi.responses import JSONResponse
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
 
+# @router.get("/")
+# def redirctionFromRoot(request: Request):
+#     url = request.url_for("/map")
+#     return Request.RedirectResponse(url="/map")
+
 # returns main page with map
 # awaits get request
 @router.get("/map")
