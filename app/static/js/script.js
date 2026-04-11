@@ -1,55 +1,32 @@
-// async function fetchFireData(lat, lon) {
-//   const randomValue = () => Math.floor(70 + Math.random() * 21); // 70-90 inclusive
-
-//   return {
-//     temp: randomValue(),
-//     wind_speed: randomValue()
-//   };
-// }
-
-
-async function fetchAndLoadDangerZones() {
-  try {
-    const response = await fetch('/fire/dangerZones');
-    const zones = await response.json();
-
-    for (const zone of zones) {
-      const lat = zone.lat ?? zone.latitude;
-      const lng = zone.lon ?? zone.longitude ?? zone.lng;
-      const fri = zone.fri ?? getFRIFromData(zone.temp, zone.wind_speed);
-
-      if (lat == null || lng == null || fri == null) continue;
-
-      const style = getFRIStyle(fri);
-      const key   = cellKey(lat, lng);
-
-      clickedCells[key] = { fri, style };
-
-      if (fri >= 70) {
-        addToSidebar(lat, lng, fri, style);
-      }
-    }
-
-    drawGrid();
-
-  } catch (error) {
-    console.error('Failed to load danger zones:', error);
-  }
-}
-
 async function fetchFireData(lat, lon) {
   try {
-    const response = await fetch(`/fire/data?lat=${lat}&lon=${lon}`);
+    const response = await fetch(`http://127.0.0.1:8000/fire/data?lat=${lat}&lon=${lon}`);
+    
+    if (!response.ok) throw new Error("Backend not responding");
+
     const data = await response.json();
     return {
-      temp:       data.temp       ?? "Err",
-      wind_speed: data.wind_speed ?? "Err"
+      temp: data.temp,
+      wind_speed: data.wind_speed,
+      risk_index: data.risk_index,
+      alert_level: data.alert_level
     };
   } catch (error) {
-    console.error(error);
-    return { temp: "Err", wind_speed: "Err" };
+    console.error("Connection failed", error);
+    return null;
   }
 }
+
+const RISK_LEVELS = [
+  { min: 85, color: "#8B0000", label: "EXTREME",   action: "All channels + evacuation readiness" },
+  { min: 70, color: "#ff0000", label: "VERY HIGH", action: "SMS + dispatch prep" },
+  { min: 50, color: "#ffa500", label: "HIGH",      action: "Immediate email alert" },
+  { min: 25, color: "#ffff00", label: "MODERATE",  action: "Daily digest + forecast review" },
+  { min: 0,  color: "#00ff00", label: "LOW",       action: "Log only (review EOD)" }
+];
+
+
+const DEFAULT_STYLE = RISK_LEVELS[RISK_LEVELS.length - 1];
 
 function getFRIFromData(temp, windSpeed) {
   if (temp === "Err" || windSpeed === "Err") return null;
@@ -57,11 +34,8 @@ function getFRIFromData(temp, windSpeed) {
 }
 
 function getFRIStyle(fri) {
-  if (fri <= 24) return { color: "#00ff00", label: "LOW",       action: "Log only (review EOD)" };
-  if (fri <= 49) return { color: "#ffff00", label: "MODERATE",  action: "Daily digest + forecast review" };
-  if (fri <= 69) return { color: "#ffa500", label: "HIGH",      action: "Immediate email alert" };
-  if (fri <= 84) return { color: "#ff0000", label: "VERY HIGH", action: "SMS + dispatch prep" };
-  return          { color: "#8B0000",       label: "EXTREME",   action: "All channels + evacuation readiness" };
+  const style = RISK_LEVELS.find(level => fri >= level.min);
+  return style || DEFAULT_STYLE;
 }
 
 var clickedCells = {};
@@ -117,38 +91,33 @@ var FINEST_SIZE = 0.05;
 var focusGrid = null;
 
 function drawGrid() {
+  if (!map) return;
   gridLayer.clearLayers();
-  const gridSize = getGridSize();
-  let bounds;
-
+  
   if (focusGrid) {
     const { lat, lng, size } = focusGrid;
-
-    const north = lat + size * 1.5;
-    const south = lat - size * 1.5;
-    const west  = lng - size * 1.5;
-    const east  = lng + size * 1.5;
-
-    bounds = L.latLngBounds([south, west], [north, east]);
+    const startLat = lat - (size * 1.5);
+    const startLng = lng - (size * 1.5);
 
     for (let i = 0; i < 3; i++) {
-      const latStep = north - size * (i + 1);
       for (let j = 0; j < 3; j++) {
-        const lngStep = west + size * j;
-        drawCell(latStep, lngStep, size);
+        drawCell(startLat + (i * size), startLng + (j * size), size);
       }
     }
-  } else {
-    bounds = map.getBounds();
-    const south = bounds.getSouth();
-    const north = bounds.getNorth();
-    const west  = bounds.getWest();
-    const east  = bounds.getEast();
+    return; 
+  }
 
-    for (let lat = south; lat < north; lat += gridSize) {
-      for (let lng = west; lng < east; lng += gridSize) {
-        drawCell(lat, lng, gridSize);
-      }
+  const gridSize = getGridSize();
+  const bounds = map.getBounds();
+  
+  const south = Math.floor(bounds.getSouth() / gridSize) * gridSize;
+  const north = Math.ceil(bounds.getNorth() / gridSize) * gridSize;
+  const west = Math.floor(bounds.getWest() / gridSize) * gridSize;
+  const east = Math.ceil(bounds.getEast() / gridSize) * gridSize;
+
+  for (let lt = south; lt < north; lt += gridSize) {
+    for (let ln = west; ln < east; ln += gridSize) {
+      drawCell(lt, ln, gridSize);
     }
   }
 }
@@ -171,60 +140,55 @@ function drawCell(lat, lng, gs) {
     fillOpacity: saved ? 0.45 : 0.15
   }).addTo(gridLayer);
 
-  // attach your existing click handler
-  (function(cb, lat, lng, gs, rect) {
-    rect.on('click', async function(e) {
-      L.DomEvent.stopPropagation(e);
+  rect.on('click', async function(e) {
+    L.DomEvent.stopPropagation(e);
 
-      if (gs <= FINEST_SIZE) {
-        const centerLat = lat + gs / 2;
-        const centerLng = lng + gs / 2;
-        const key = cellKey(centerLat, centerLng);
+    if (gs > FINEST_SIZE) return;
 
-        if (clickedCells[key]) {
-          delete clickedCells[key];
-          rect.setStyle({ color: "#555", fillColor: "#555", fillOpacity: 0.15 });
-          dangerousZones = dangerousZones.filter(z => z.key !== key);
-          rebuildSidebar();
-          return;
-        }
+    if (clickedCells[key]) {
+      delete clickedCells[key];
+      rect.setStyle({ color: "#555", fillColor: "#555", fillOpacity: 0.15 });
+      dangerousZones = dangerousZones.filter(z => z.key !== key);
+      rebuildSidebar();
+      return;
+    }
 
-        const data = await fetchFireData(centerLat, centerLng);
-        const fri = getFRIFromData(data.temp, data.wind_speed);
-        const style = fri !== null
-          ? getFRIStyle(fri)
-          : { color: "#555", label: "No data", action: "Backend unreachable" };
+    rect.setStyle({ color: "#3388ff", fillOpacity: 0.6 });
 
-        clickedCells[key] = { fri, style };
-        rect.setStyle({ color: style.color, fillColor: style.color, fillOpacity: 0.45 });
-
-        if (fri !== null && fri >= 70) {
-          addToSidebar(centerLat, centerLng, fri, style);
-        }
-
-        const tempDisplay = (data.temp !== "Err") ? data.temp.toFixed(1) + ' °C' : 'Err';
-        const windDisplay = (data.wind_speed !== "Err") ? data.wind_speed.toFixed(1) + ' km/h' : 'Err';
-        const friDisplay  = (fri !== null) ? 'FRI: ' + fri.toFixed(1) + ' (' + style.label + ')' : 'FRI: N/A';
-
-        L.popup()
-          .setLatLng([centerLat, centerLng])
-          .setContent(
-            '<div style="font-family:monospace;font-size:13px;line-height:1.7">' +
-            '<b>🔥 Fire Risk Cell</b><br>' +
-            friDisplay + '<br>' +
-            '⚙️ Action: ' + style.action + '<br>' +
-            '🌍 Lat: ' + centerLat.toFixed(5) + '<br>' +
-            '🌍 Lng: ' + centerLng.toFixed(5) + '<br>' +
-            '🌡️ Temperature: ' + tempDisplay + '<br>' +
-            '💨 Wind Speed: ' + windDisplay +
-            '</div>'
-          )
-          .openOn(map);
-      } else {
-        map.fitBounds(cb, { animate: true, padding: [10, 10] });
+    const data = await fetchFireData(centerLat, centerLng);
+    
+    if (data) {
+      const fri = data.risk_index; 
+      const style = getFRIStyle(fri);
+      style.label = data.alert_level; 
+  
+      clickedCells[key] = { fri, style };
+      rect.setStyle({ color: style.color, fillColor: style.color, fillOpacity: 0.45 });
+    
+      if (fri >= 70) {
+        addToSidebar(centerLat, centerLng, fri, style);
       }
-    });
-  })(cellBounds, lat, lng, gs, rect);
+
+      L.popup({
+        autoPan: false,
+        closeButton: true
+      })
+      .setLatLng([centerLat, centerLng])
+      .setContent(`
+        <div style="font-family:monospace;font-size:13px;line-height:1.7">
+          <b>🔥 Fire Risk: ${data.alert_level}</b><br>
+          FRI: ${fri.toFixed(2)}<br>
+          ⚙️ Action: ${style.action}<br>
+          🌡️ Temp: ${data.temp}°C<br>
+          💨 Wind: ${data.wind_speed} km/h
+        </div>
+      `)
+      .openOn(map);
+    } else {
+      rect.setStyle({ color: "#ff0000", fillOpacity: 0.3 }); 
+      alert("Backend unreachable");
+    }
+  });
 }
 
 function rebuildSidebar() {
@@ -246,27 +210,63 @@ function rebuildSidebar() {
 }
 
 drawGrid();
-map.on('moveend zoomend', drawGrid);
 
-document.getElementById('go-btn').onclick = function () {
+map.on('moveend', function() {
+  drawGrid();
+});
+
+let isFlying = false;
+
+document.getElementById('go-btn').onclick = function (e) {
+  if (e) e.preventDefault();
   const lat = parseFloat(document.getElementById('lat-input').value);
   const lng = parseFloat(document.getElementById('lng-input').value);
 
-  if (isNaN(lat) || isNaN(lng)) {
-    alert("Invalid coordinates");
-    return;
-  }
+  if (isNaN(lat) || isNaN(lng)) return;
 
-  const size = FINEST_SIZE;
+  isFlying = true; 
+  focusGrid = { lat, lng, size: FINEST_SIZE };
 
-  focusGrid = { lat, lng, size };
-
-  map.flyTo([lat, lng], 12, {
-    animate: true,
-    duration: 1.5
-  });
-
-  drawGrid();
+  map.flyTo([lat, lng], 12, { animate: true, duration: 1.5 });
 };
 
-fetchAndLoadDangerZones();
+map.on('moveend', function() {
+  isFlying = false; 
+  drawGrid();
+});
+
+document.getElementById('reset-btn').onclick = function (e) {
+  if (e) e.preventDefault();
+
+  focusGrid = null;
+
+  document.getElementById('lat-input').value = '';
+  document.getElementById('lng-input').value = '';
+  gridLayer.clearLayers();
+
+  map.flyTo([20, 0], 2, {
+    animate: true,
+    duration: 1
+  });
+};
+
+var legend = L.control({position: 'bottomright'});
+
+legend.onAdd = function (map) {
+  var div = L.DomUtil.create('div', 'info legend');
+  div.innerHTML = '<strong style="display:block; margin-bottom: 5px;">Risk Level (FRI)</strong>';
+
+  [...RISK_LEVELS].reverse().forEach((level, index, array) => {
+    const nextLevel = array[index + 1];
+    const rangeLabel = nextLevel ? `${level.min}&ndash;${nextLevel.min - 1}` : `${level.min}+`;
+    
+    div.innerHTML += `
+      <i style="background:${level.color}"></i> 
+      ${rangeLabel} (${level.label})<br>
+    `;
+  });
+
+  return div;
+};
+
+legend.addTo(map);

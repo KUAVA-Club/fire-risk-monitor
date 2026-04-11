@@ -86,3 +86,36 @@ html, body {
   color: white;
   cursor: pointer;
 }
+
+#reset-btn {
+  background: #444 !important; 
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+#reset-btn:hover {
+  background: #666 !important;
+}
+
+.info.legend {
+  padding: 10px;
+  font-family: monospace;
+  background: rgba(26, 26, 26, 0.9); 
+  color: #eee;
+  box-shadow: 0 0 15px rgba(0,0,0,0.5);
+  border-radius: 5px;
+  line-height: 18px;
+  border: 1px solid #444;
+}
+
+.info.legend i {
+  width: 18px;
+  height: 18px;
+  float: left;
+  margin-right: 8px;
+  opacity: 0.8;
+  border-radius: 2px;
+}

@@ -1,0 +1,152 @@
+2026-04-12 00:38:23,653 | INFO | Request received — lat: 54.8319255255631, lon: 52.055062866210925
+2026-04-12 00:38:24,170 | INFO | Request received — lat: 54.8319255255631, lon: 52.055062866210925
+2026-04-12 00:38:24,331 | INFO | Request received — lat: 54.8319255255631, lon: 52.055062866210925
+2026-04-12 00:38:24,775 | INFO | Request received — lat: 54.81974746195475, lon: 52.06269454956055
+2026-04-12 00:38:25,023 | INFO | API data retrieved — temp: 1.8450000286102295, wind: 8.404285430908203
+2026-04-12 00:38:25,440 | INFO | API data retrieved — temp: 1.8450000286102295, wind: 8.404285430908203
+2026-04-12 00:38:25,624 | INFO | API data retrieved — temp: 1.8450000286102295, wind: 8.404285430908203
+2026-04-12 00:38:26,137 | INFO | API data retrieved — temp: 1.9814999103546143, wind: 8.404285430908203
+2026-04-12 00:40:16,754 | INFO | Request received — lat: 40.0, lon: 40.0
+2026-04-12 00:40:18,022 | INFO | API data retrieved — temp: -3.6540000438690186, wind: 1.1384198665618896
+2026-04-12 00:40:47,971 | INFO | Request received — lat: 34.5, lon: 22.1
+2026-04-12 00:40:48,239 | INFO | API data retrieved — temp: 17.149999618530273, wind: 6.618519306182861
+2026-04-12 00:44:38,926 | INFO | Request received — lat: 34.5, lon: 75.4
+2026-04-12 00:44:39,367 | INFO | API data retrieved — temp: -8.843500137329102, wind: 3.7585103511810303
+2026-04-12 00:44:39,368 | INFO | Grid zone inserted — zone_id: 4d5d698d-a474-4a1b-94d0-87652445940e
+2026-04-12 00:44:39,369 | INFO | Weather reading inserted for zone_id: 4d5d698d-a474-4a1b-94d0-87652445940e
+2026-04-12 00:44:46,744 | INFO | Request received — lat: 34.5, lon: 12.400000000000002
+2026-04-12 00:44:47,101 | INFO | API data retrieved — temp: 19.850000381469727, wind: 24.248613357543945
+2026-04-12 00:44:47,103 | INFO | Grid zone inserted — zone_id: 596fc992-f076-4c36-a3cd-2d9921002fe1
+2026-04-12 00:44:47,105 | INFO | Weather reading inserted for zone_id: 596fc992-f076-4c36-a3cd-2d9921002fe1
+2026-04-12 00:45:23,060 | INFO | Request received — lat: 55.399847509216954, lon: 102.78627471923829
+2026-04-12 00:45:23,354 | INFO | API data retrieved — temp: -9.55150032043457, wind: 3.096837043762207
+2026-04-12 00:45:23,356 | INFO | Grid zone inserted — zone_id: d65c62ab-bead-48ca-9d22-9f9cbe7508c6
+2026-04-12 00:45:23,357 | INFO | Weather reading inserted for zone_id: d65c62ab-bead-48ca-9d22-9f9cbe7508c6
+2026-04-12 00:47:22,794 | INFO | Request received — lat: 34.5, lon: 21.3
+2026-04-12 00:47:23,105 | INFO | API data retrieved — temp: 17.350000381469727, wind: 9.028754234313965
+2026-04-12 00:47:23,106 | INFO | Grid zone inserted — zone_id: e968571b-357e-4030-8213-cd82de120848
+2026-04-12 00:47:23,107 | INFO | Weather reading inserted for zone_id: e968571b-357e-4030-8213-cd82de120848
+2026-04-12 00:48:09,241 | INFO | Request received — lat: 54.6, lon: 34.29999999999999
+2026-04-12 00:48:10,536 | INFO | API data retrieved — temp: 0.30699998140335083, wind: 4.320000171661377
+2026-04-12 00:48:10,537 | INFO | Grid zone inserted — zone_id: f56d362f-220e-4d6b-96e8-35e35dbebc6e
+2026-04-12 00:48:10,538 | INFO | Weather reading inserted for zone_id: f56d362f-220e-4d6b-96e8-35e35dbebc6e
+2026-04-12 00:50:28,900 | INFO | Request received — lat: 34.175000000000004, lon: 65.37500000000001
+2026-04-12 00:50:31,255 | INFO | Request received — lat: 34.175000000000004, lon: 65.42500000000001
+2026-04-12 00:50:31,619 | INFO | API data retrieved — temp: 0.6155000329017639, wind: 3.219938039779663
+2026-04-12 00:50:31,620 | INFO | Grid zone inserted — zone_id: bdce78cd-de45-4c7d-9594-a7ba7c2c7667
+2026-04-12 00:50:31,620 | INFO | Weather reading inserted for zone_id: bdce78cd-de45-4c7d-9594-a7ba7c2c7667
+2026-04-12 00:50:34,275 | INFO | API data retrieved — temp: 0.6220000386238098, wind: 3.219938039779663
+2026-04-12 00:50:34,276 | INFO | Grid zone inserted — zone_id: f16c65a0-20ed-4097-97f4-dce234db6479
+2026-04-12 00:50:34,277 | INFO | Weather reading inserted for zone_id: f16c65a0-20ed-4097-97f4-dce234db6479
+2026-04-12 00:51:46,270 | INFO | Request received — lat: 45.3, lon: 76.5
+2026-04-12 00:51:46,640 | INFO | API data retrieved — temp: 9.223999977111816, wind: 9.164103507995605
+2026-04-12 00:51:46,642 | INFO | Grid zone inserted — zone_id: 5ae8b722-6006-41ee-848d-1ded665c3160
+2026-04-12 00:51:46,643 | INFO | Weather reading inserted for zone_id: 5ae8b722-6006-41ee-848d-1ded665c3160
+2026-04-12 00:54:06,408 | INFO | Request received — lat: 34.2, lon: 65.4
+2026-04-12 00:54:06,752 | INFO | API data retrieved — temp: 1.4149999618530273, wind: 4.379589080810547
+2026-04-12 00:54:06,753 | INFO | Grid zone inserted — zone_id: b28900f4-bfab-49ee-999e-79dc1b662b84
+2026-04-12 00:54:06,754 | INFO | Weather reading inserted for zone_id: b28900f4-bfab-49ee-999e-79dc1b662b84
+2026-04-12 00:54:16,465 | INFO | Request received — lat: 53.73164372800632, lon: 71.88332519531251
+2026-04-12 00:54:16,733 | INFO | API data retrieved — temp: 2.010999917984009, wind: 7.754636764526367
+2026-04-12 00:54:16,735 | INFO | Grid zone inserted — zone_id: e95aea0a-044c-4243-923c-9cd81d0cbf03
+2026-04-12 00:54:16,736 | INFO | Weather reading inserted for zone_id: e95aea0a-044c-4243-923c-9cd81d0cbf03
+2026-04-12 00:56:30,073 | INFO | Request received — lat: 54.6, lon: 24.1
+2026-04-12 00:56:30,434 | INFO | API data retrieved — temp: 0.5995000004768372, wind: 6.479999542236328
+2026-04-12 00:56:30,436 | INFO | Grid zone inserted — zone_id: bd7738d0-458c-4092-900e-cb61f9b3ab09
+2026-04-12 00:56:30,438 | INFO | Weather reading inserted for zone_id: bd7738d0-458c-4092-900e-cb61f9b3ab09
+2026-04-12 00:58:35,215 | INFO | Request received — lat: 54.6, lon: 87.6
+2026-04-12 00:58:35,509 | INFO | API data retrieved — temp: -3.93999981880188, wind: 3.396233081817627
+2026-04-12 00:58:35,510 | INFO | Grid zone inserted — zone_id: 058d9db8-1548-4ab4-94c3-63ad14962e41
+2026-04-12 00:58:35,512 | INFO | Weather reading inserted for zone_id: 058d9db8-1548-4ab4-94c3-63ad14962e41
+2026-04-12 00:59:17,079 | INFO | Request received — lat: 45.59361672312978, lon: 83.52780303955079
+2026-04-12 00:59:17,340 | INFO | API data retrieved — temp: 2.3910000324249268, wind: 9.422101020812988
+2026-04-12 00:59:17,341 | INFO | Grid zone inserted — zone_id: 95c80082-e2f9-4206-ab01-0f0ee54c3826
+2026-04-12 00:59:17,342 | INFO | Weather reading inserted for zone_id: 95c80082-e2f9-4206-ab01-0f0ee54c3826
+2026-04-12 01:01:22,037 | INFO | Request received — lat: 44.324999999999996, lon: 24.675
+2026-04-12 01:01:22,348 | INFO | API data retrieved — temp: 5.38700008392334, wind: 2.2768397331237793
+2026-04-12 01:01:22,350 | INFO | Grid zone inserted — zone_id: 35161faf-3553-4f81-8fcf-d129a5cfc48d
+2026-04-12 01:01:22,351 | INFO | Weather reading inserted for zone_id: 35161faf-3553-4f81-8fcf-d129a5cfc48d
+2026-04-12 01:04:10,711 | INFO | Request received — lat: 45.6, lon: 78.6
+2026-04-12 01:04:11,106 | INFO | API data retrieved — temp: 7.493500232696533, wind: 8.91318130493164
+2026-04-12 01:04:11,108 | INFO | Grid zone inserted — zone_id: bc69ca28-aa87-43b9-a288-a961f9e0c9d2
+2026-04-12 01:04:11,109 | INFO | Weather reading inserted for zone_id: bc69ca28-aa87-43b9-a288-a961f9e0c9d2
+2026-04-12 01:05:14,499 | INFO | Request received — lat: 45.3, lon: 23.4
+2026-04-12 01:05:14,886 | INFO | API data retrieved — temp: -0.7125000357627869, wind: 3.826852560043335
+2026-04-12 01:05:14,887 | INFO | Grid zone inserted — zone_id: 008c6fa0-ac2e-4ea1-bde3-3a4d79fa78f6
+2026-04-12 01:05:14,888 | INFO | Weather reading inserted for zone_id: 008c6fa0-ac2e-4ea1-bde3-3a4d79fa78f6
+2026-04-12 01:05:33,533 | INFO | Request received — lat: 44.99119436708165, lon: 21.503800964355474
+2026-04-12 01:05:33,868 | INFO | API data retrieved — temp: 1.8980000019073486, wind: 3.617955207824707
+2026-04-12 01:05:33,869 | INFO | Grid zone inserted — zone_id: bef0bd23-9c42-4e17-885d-2a56b232d302
+2026-04-12 01:05:33,870 | INFO | Weather reading inserted for zone_id: bef0bd23-9c42-4e17-885d-2a56b232d302
+2026-04-12 01:08:21,043 | INFO | Request received — lat: 45.29999999999999, lon: 76.5
+2026-04-12 01:08:21,461 | INFO | API data retrieved — temp: 8.62399959564209, wind: 9.178235054016113
+2026-04-12 01:08:21,462 | INFO | Grid zone inserted — zone_id: 5ae8b722-6006-41ee-848d-1ded665c3160
+2026-04-12 01:08:21,464 | INFO | Weather reading inserted for zone_id: 5ae8b722-6006-41ee-848d-1ded665c3160
+2026-04-12 01:08:48,857 | INFO | Request received — lat: 7.525, lon: 9.325000000000003
+2026-04-12 01:08:49,127 | INFO | API data retrieved — temp: 30.638999938964844, wind: 9.983105659484863
+2026-04-12 01:08:49,129 | INFO | Grid zone inserted — zone_id: 3dc1225f-96bc-4162-aabd-b9a4eeb245b2
+2026-04-12 01:08:49,129 | INFO | Weather reading inserted for zone_id: 3dc1225f-96bc-4162-aabd-b9a4eeb245b2
+2026-04-12 01:18:54,235 | INFO | Request received — lat: 40.875, lon: 85.625
+2026-04-12 01:18:54,591 | INFO | API data retrieved — temp: 12.631000518798828, wind: 18.335275650024414
+2026-04-12 01:18:54,593 | INFO | Grid zone inserted — zone_id: 4f785ded-fbc4-48b9-a7e8-3b21ff6f52e0
+2026-04-12 01:18:54,594 | INFO | Weather reading inserted for zone_id: 4f785ded-fbc4-48b9-a7e8-3b21ff6f52e0
+2026-04-12 01:20:09,289 | INFO | Request received — lat: 63.125, lon: 62.32499999999999
+2026-04-12 01:20:10,850 | INFO | API data retrieved — temp: 1.4194999933242798, wind: 8.287821769714355
+2026-04-12 01:20:10,852 | INFO | Grid zone inserted — zone_id: 6d100902-6134-4d52-a3bd-9e0be1d69d69
+2026-04-12 01:20:10,854 | INFO | Weather reading inserted for zone_id: 6d100902-6134-4d52-a3bd-9e0be1d69d69
+2026-04-12 01:20:19,001 | INFO | Request received — lat: 43.49999999999999, lon: 12.300000000000002
+2026-04-12 01:20:19,311 | INFO | API data retrieved — temp: 12.08799934387207, wind: 7.636752605438232
+2026-04-12 01:20:19,313 | INFO | Grid zone inserted — zone_id: c3f435e4-03b8-4c3c-9907-08172ac2a47f
+2026-04-12 01:20:19,315 | INFO | Weather reading inserted for zone_id: c3f435e4-03b8-4c3c-9907-08172ac2a47f
+2026-04-12 01:22:38,245 | INFO | Request received — lat: 65.6, lon: 86.7
+2026-04-12 01:22:38,540 | INFO | API data retrieved — temp: -9.902000427246094, wind: 9.387651443481445
+2026-04-12 01:22:38,542 | INFO | Grid zone inserted — zone_id: 6804aed0-255c-4633-a1ea-caec37254f0b
+2026-04-12 01:22:38,544 | INFO | Weather reading inserted for zone_id: 6804aed0-255c-4633-a1ea-caec37254f0b
+2026-04-12 01:25:24,942 | INFO | Request received — lat: 43.49999999999999, lon: 12.100000000000001
+2026-04-12 01:25:25,268 | INFO | API data retrieved — temp: 13.146499633789062, wind: 1.0800000429153442
+2026-04-12 01:25:25,270 | INFO | Grid zone inserted — zone_id: a7134aa1-6400-4c2f-8713-2e82eed9d03e
+2026-04-12 01:25:25,271 | INFO | Weather reading inserted for zone_id: a7134aa1-6400-4c2f-8713-2e82eed9d03e
+2026-04-12 01:29:55,976 | INFO | Request received — lat: 56.699999999999996, lon: 54.89999999999999
+2026-04-12 01:29:56,251 | INFO | API data retrieved — temp: -2.191499948501587, wind: 2.741678237915039
+2026-04-12 01:29:56,253 | INFO | Grid zone inserted — zone_id: 2f48e3d5-75e3-49a5-8a2f-8edf121658f6
+2026-04-12 01:29:56,254 | INFO | Weather reading inserted for zone_id: 2f48e3d5-75e3-49a5-8a2f-8edf121658f6
+2026-04-12 01:39:06,440 | INFO | Request received — lat: 57.375, lon: 54.874999999999986
+2026-04-12 01:39:06,891 | INFO | API data retrieved — temp: -3.0384998321533203, wind: 1.6099690198898315
+2026-04-12 01:39:06,893 | INFO | Grid zone inserted — zone_id: bd5dd99d-6062-413c-8dfd-054466b4f0a4
+2026-04-12 01:39:06,894 | INFO | Weather reading inserted for zone_id: bd5dd99d-6062-413c-8dfd-054466b4f0a4
+2026-04-12 01:42:52,435 | INFO | Request received — lat: 43.49999999999999, lon: 21.3
+2026-04-12 01:42:52,780 | INFO | API data retrieved — temp: 4.772500038146973, wind: 4.104631423950195
+2026-04-12 01:42:52,783 | INFO | Grid zone inserted — zone_id: 625619fc-59d2-486e-9e48-96283eac6225
+2026-04-12 01:42:52,784 | INFO | Weather reading inserted for zone_id: 625619fc-59d2-486e-9e48-96283eac6225
+2026-04-12 01:49:44,320 | INFO | Request received — lat: 32.39999999999999, lon: 65.5
+2026-04-12 01:49:44,679 | INFO | API data retrieved — temp: 11.765000343322754, wind: 0.5091168880462646
+2026-04-12 01:49:44,681 | INFO | Grid zone inserted — zone_id: 8500be89-2b14-4e63-beb9-f9feafaf8c54
+2026-04-12 01:49:44,683 | INFO | Weather reading inserted for zone_id: 8500be89-2b14-4e63-beb9-f9feafaf8c54
+2026-04-12 01:49:52,355 | INFO | Request received — lat: 53.824999999999996, lon: 38.97499999999999
+2026-04-12 01:49:52,656 | INFO | API data retrieved — temp: 2.321500062942505, wind: 3.5999999046325684
+2026-04-12 01:49:52,658 | INFO | Grid zone inserted — zone_id: 6bc9d0b6-598a-4322-9eb7-b404cd38a705
+2026-04-12 01:49:52,659 | INFO | Weather reading inserted for zone_id: 6bc9d0b6-598a-4322-9eb7-b404cd38a705
+2026-04-12 01:58:48,674 | INFO | Request received — lat: 32.39999999999999, lon: 54.29999999999999
+2026-04-12 01:58:49,033 | INFO | API data retrieved — temp: 16.12799835205078, wind: 7.342587947845459
+2026-04-12 01:58:49,035 | INFO | Grid zone inserted — zone_id: ed845368-6870-44c5-98b6-a522471290e4
+2026-04-12 01:58:49,036 | INFO | Weather reading inserted for zone_id: ed845368-6870-44c5-98b6-a522471290e4
+2026-04-12 02:02:12,574 | INFO | Request received — lat: 54.29999999999999, lon: 65.4
+2026-04-12 02:02:12,876 | INFO | API data retrieved — temp: 4.582499980926514, wind: 7.4215898513793945
+2026-04-12 02:02:12,878 | INFO | Grid zone inserted — zone_id: 61e20bc4-82e8-4e06-862a-809a29840a56
+2026-04-12 02:02:12,879 | INFO | Weather reading inserted for zone_id: 61e20bc4-82e8-4e06-862a-809a29840a56
+2026-04-12 02:20:02,874 | INFO | Request received — lat: 43.49999999999999, lon: 76.5
+2026-04-12 02:20:04,418 | INFO | Request received — lat: 43.49999999999999, lon: 76.5
+2026-04-12 02:20:04,858 | INFO | API data retrieved — temp: 7.384500026702881, wind: 3.415259599685669
+2026-04-12 02:20:04,859 | INFO | Grid zone inserted — zone_id: 601de637-977a-4479-bc9a-9d270f0144ff
+2026-04-12 02:20:04,861 | INFO | Weather reading inserted for zone_id: 601de637-977a-4479-bc9a-9d270f0144ff
+2026-04-12 02:20:05,064 | INFO | Request received — lat: 43.49999999999999, lon: 76.55
+2026-04-12 02:20:06,558 | INFO | API data retrieved — temp: 7.384500026702881, wind: 3.415259599685669
+2026-04-12 02:20:06,558 | INFO | Grid zone inserted — zone_id: 601de637-977a-4479-bc9a-9d270f0144ff
+2026-04-12 02:20:06,560 | INFO | Weather reading inserted for zone_id: 601de637-977a-4479-bc9a-9d270f0144ff
+2026-04-12 02:20:07,865 | INFO | API data retrieved — temp: 7.118000030517578, wind: 3.415259599685669
+2026-04-12 02:20:07,866 | INFO | Grid zone inserted — zone_id: cb3207c9-2555-4c44-a163-931f29d282eb
+2026-04-12 02:20:07,867 | INFO | Weather reading inserted for zone_id: cb3207c9-2555-4c44-a163-931f29d282eb
+2026-04-12 02:20:14,309 | INFO | Request received — lat: 65.6, lon: 43.199999999999996
+2026-04-12 02:20:14,757 | INFO | API data retrieved — temp: -1.777999997138977, wind: 4.33497428894043
+2026-04-12 02:20:14,758 | INFO | Grid zone inserted — zone_id: 8b9e5f3b-147d-4b31-95c9-1da1fdb5910b
+2026-04-12 02:20:14,760 | INFO | Weather reading inserted for zone_id: 8b9e5f3b-147d-4b31-95c9-1da1fdb5910b
