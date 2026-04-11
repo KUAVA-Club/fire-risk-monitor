@@ -1,10 +1,8 @@
-.idea
-.venv
 .idea/
-__pychache__/
-app/__pychache__/
-app/routes/__pychache__/
+.venv/
+__pycache__/
+*.pyc
 fire_monitor.db
 app/fire_monitor.db
-*.pyc
 .cache.sqlite
+app.log
