@@ -1,7 +1,8 @@
 .idea/
 __pychache__/
 app/__pychache__/
-app/routes/__pychache__/
+app/routes/__pychache__
+app/routes/__pychache__/fire.cpython-312.pyc
 app/core/__pychache__
 fire_monitor.db
 app/fire_monitor.db
