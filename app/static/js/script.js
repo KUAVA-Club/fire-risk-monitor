@@ -295,6 +295,7 @@ document.getElementById('reset-btn').onclick = function (e) {
   document.getElementById('lat-input').value = '';
   document.getElementById('lng-input').value = '';
   gridLayer.clearLayers();
+  map.closePopup();
 
   map.flyTo([20, 0], 2, {
     animate: true,
