@@ -4,7 +4,6 @@ from fastapi import Request
 from services.open_meteo_api import getData
 from database.crud.weather import create_weather_reading
 from database.crud.grid import create_grid_zone
-from database.crud.weather import get_all_weather
 from database.crud.risk import insert_risk_and_alert
 from database.crud.retrieval import get_recent_data
 from services.risk_calculator import calculate_fire_risk
@@ -25,6 +24,7 @@ templates = Jinja2Templates(directory="templates")
 @router.get("/map")
 def get_fire(request: Request):
     return templates.TemplateResponse(
+        request,
         "index.html",
         {"request": request}
     )

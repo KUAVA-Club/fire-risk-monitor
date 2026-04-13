@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+jinja2
+openmeteo_requests
+requests_cache
+retry_requests

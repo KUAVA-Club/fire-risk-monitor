@@ -8,3 +8,5 @@ fire_monitor.db
 app/fire_monitor.db
 .cache.sqlite
 app.log
+.venv/
+.venv
