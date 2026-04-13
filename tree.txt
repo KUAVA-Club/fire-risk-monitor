@@ -1,0 +1,28 @@
+.
+├── app
+│   ├── database
+│   │   ├── crud
+│   │   ├── db.py
+│   │   └── init_db.py
+│   ├── main.py
+│   ├── routes
+│   │   └── fire.py
+│   ├── schemas
+│   │   ├── alert_event_schema.py
+│   │   ├── drone_dispatch_schema.py
+│   │   ├── fire_risk_score_schema.py
+│   │   ├── grid_zone_schema.py
+│   │   ├── satellite_detection_schema.py
+│   │   └── weather_reading_schema.py
+│   ├── services
+│   │   └── open_meteo_api.py
+│   ├── static
+│   │   ├── css
+│   │   └── js
+│   └── templates
+│       └── index.html
+├── README.md
+├── requirements.txt
+└── tree.txt
+
+11 directories, 15 files
