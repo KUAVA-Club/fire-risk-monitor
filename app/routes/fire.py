@@ -6,10 +6,10 @@ from database.crud.weather import create_weather_reading
 from database.crud.grid import create_grid_zone
 from database.crud.risk import insert_risk_and_alert
 from database.crud.retrieval import get_recent_data
-from services.risk_calculator import calculate_fire_risk
+
 from services.most_dangerous_zones import get_top_5_danger_zones;
-from core.logger import logger
-from fastapi.responses import JSONResponse
+from core.logger import logger  
+from services.risk_scorer import calculate_fire_risk
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -51,13 +51,7 @@ def get_fire_data(lat: float, lon: float):
     data = getData(lat, lon)
     logger.info(f"API data retrieved — temp: {data['temperature_2m']}, wind: {data['wind_speed_10m']}")
     # calculate risk
-    risk = calculate_fire_risk(
-        temperature=float(data["temperature_2m"]),
-        wind_speed=float(data["wind_speed_10m"]),
-        humidity=float(data["relative_humidity_2m"]),
-        precipitation=float(data["precipitation"]),
-        soil_moisture=float(data["soil_moisture_0_to_1cm"])
-    )
+    risk = calculate_fire_risk(float(data["temperature_2m"]), float(data["wind_speed_10m"]), float(data["relative_humidity_2m"]), float(data["precipitation"]), float(data["soil_moisture_0_to_1cm"]))
     # insertion of accessed zone to the grid_zone table
     zone_id = create_grid_zone(data)
     logger.info(f"Grid zone inserted — zone_id: {zone_id}")
