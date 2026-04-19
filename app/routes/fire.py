@@ -51,7 +51,7 @@ def get_fire_data(lat: float, lon: float):
     data = getData(lat, lon)
     logger.info(f"API data retrieved — temp: {data['temperature_2m']}, wind: {data['wind_speed_10m']}")
     # calculate risk
-    risk = calculate_fire_risk(float(data["temperature_2m"]), float(data["wind_speed_10m"]), float(data["relative_humidity_2m"]), float(data["precipitation"]), float(data["soil_moisture_0_to_1cm"]))
+    risk = calculate_fire_risk(float(data["temperature_2m"]), float(data["wind_speed_10m"]), float(data["relative_humidity_2m"]), float(data["precipitation_sum"]), float(data["soil_moisture_0_to_1cm"]))
     # insertion of accessed zone to the grid_zone table
     zone_id = create_grid_zone(data)
     logger.info(f"Grid zone inserted — zone_id: {zone_id}")
