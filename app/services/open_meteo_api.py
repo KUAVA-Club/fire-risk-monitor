@@ -18,12 +18,14 @@ def getData(lat,long):
         "latitude": lat,
         "longitude": long,
         "hourly": ["temperature_2m", "soil_temperature_0cm", "soil_moisture_0_to_1cm", "relative_humidity_2m", "precipitation", "wind_speed_10m"],
+        "daily": ["precipitation_sum"],
         "forecast_days": 1
     }
     responses = openmeteo.weather_api(url, params=params)
 
     # Process first location. Add a for-loop for multiple locations or weather models
     response = responses[0]
+    daily = response.Daily()
     print(f"Coordinates: {response.Latitude()}°N {response.Longitude()}°E")
     print(f"Elevation: {response.Elevation()} m asl")
     print(f"Timezone difference to GMT+0: {response.UtcOffsetSeconds()}s")
@@ -71,6 +73,8 @@ def getData(lat,long):
     datas["relative_humidity_2m"] = hourly_relative_humidity_2m[idx]
     datas["precipitation"] = hourly_precipitation[idx]
     datas["wind_speed_10m"] = hourly_wind_speed_10m[idx]
+
+    datas["precipitation_sum"] = precipitation_sum
 
     hourly_dataframe = pd.DataFrame(data = hourly_data)
     print("\nHourly data\n", hourly_dataframe)
