@@ -38,6 +38,7 @@ def getData(lat,long):
     hourly_relative_humidity_2m = hourly.Variables(3).ValuesAsNumpy()
     hourly_precipitation = hourly.Variables(4).ValuesAsNumpy()
     hourly_wind_speed_10m = hourly.Variables(5).ValuesAsNumpy()
+    precipitation_sum = daily.Variables(0).ValuesAsNumpy()[0]
 
     hourly_data = {"date": pd.date_range(
         start = pd.to_datetime(hourly.Time(), unit = "s", utc = True),
@@ -58,12 +59,11 @@ def getData(lat,long):
     # get timestamps
     times = pd.to_datetime(hourly_data["date"])
 
-    # get current time
-    now = datetime.now(timezone.utc)
-
-    # find closest index
-    diff = times - now
-    idx = abs(diff).argmin()
+    idx = times.indexer_at_time("12:00")
+    if len(idx) == 0:
+        idx = 0  # fallback
+    else:
+        idx = idx[0]
 
     datas["lat"] = lat
     datas["long"] = long
