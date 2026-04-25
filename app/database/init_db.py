@@ -72,6 +72,21 @@ def init_database():
             returned_at   DATETIME,
             FOREIGN KEY (alert_id) REFERENCES alert_event(id)
         );
+
+        CREATE TABLE IF NOT EXISTS danger_zone_cache (
+            id          TEXT PRIMARY KEY,
+            lat         REAL NOT NULL,
+            lon         REAL NOT NULL,
+            fri         REAL NOT NULL,
+            fire_count  INTEGER NOT NULL,
+            alert_level TEXT NOT NULL,
+            fetched_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_danger_zone_cache_fetched
+            ON danger_zone_cache(fetched_at);
+        CREATE INDEX IF NOT EXISTS idx_danger_zone_cache_alert
+            ON danger_zone_cache(alert_level);
     """)
 
     conn.commit()

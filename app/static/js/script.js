@@ -1,6 +1,6 @@
 async function fetchFireData(lat, lon) {
   try {
-    const response = await fetch(`http://127.0.0.1:8000/fire/data?lat=${lat}&lon=${lon}`);
+    const response = await fetch(`/fire/data?lat=${lat}&lon=${lon}`);
     if (!response.ok) throw new Error("Backend not responding");
     const data = await response.json();
     return {
