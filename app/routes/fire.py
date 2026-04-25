@@ -7,7 +7,7 @@ from database.crud.grid import create_grid_zone
 from database.crud.risk import insert_risk_and_alert
 from database.crud.retrieval import get_recent_data
 
-from services.most_dangerous_zones import get_top_5_danger_zones;
+from database.crud.danger_zones import get_cached_danger_zones
 from core.logger import logger  
 from services.risk_scorer import calculate_fire_risk
 
@@ -24,9 +24,8 @@ templates = Jinja2Templates(directory="templates")
 @router.get("/map")
 def get_fire(request: Request):
     return templates.TemplateResponse(
-        request,
-        "index.html",
-        {"request": request}
+        name="index.html",
+        request=request
     )
 
 # returns data based on location
@@ -76,5 +75,5 @@ def get_fire_data(lat: float, lon: float):
 
 @router.get("/fire/dangerZones")
 def get_danger_zones():
-    data = get_top_5_danger_zones()
+    data = get_cached_danger_zones()
     return data
