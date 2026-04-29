@@ -1,0 +1,30 @@
+# Environment variables - never commit this
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.venv/
+
+# OS files
+.DS_Store
+Thumbs.db
+.idea/
+__pychache__/
+app/__pychache__/
+app/routes/__pychache__
+app/routes/__pychache__/fire.cpython-312.pyc
+app/core/__pychache__
+fire_monitor.db
+app/fire_monitor.db
+.cache.sqlite
+app.log
+.venv/
+.venv
