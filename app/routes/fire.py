@@ -8,7 +8,8 @@ from database.crud.risk import insert_risk_and_alert
 from database.crud.retrieval import get_recent_data
 
 from database.crud.danger_zones import get_cached_danger_zones
-from core.logger import logger  
+from services.land_cover_api import get_land_cover
+from core.logger import logger
 from services.risk_scorer import calculate_fire_risk
 
 router = APIRouter()
@@ -34,11 +35,20 @@ def get_fire(request: Request):
 def get_fire_data(lat: float, lon: float):
     logger.info(f"Request received — lat: {lat}, lon: {lon}")
 
-    # TASK 2: check if fresh data exists in database (< 1 minute old)
+    land_cover = get_land_cover(lat, lon)
+    if not land_cover["relevant"]:
+        return {
+            "relevant": False,
+            "land_cover": land_cover["land_cover_name"],
+            "reason": land_cover["reason"]
+        }
+
     cached = get_recent_data(lat, lon)
     if cached:
         logger.info(f"Cache hit — returning data from {cached['computed_at']}")
         return {
+            "relevant": True,
+            "land_cover": land_cover["land_cover_name"],
             "temp": cached["temp"],
             "wind_speed": cached["wind_speed"],
             "risk_index": cached["risk_index"],
@@ -64,10 +74,11 @@ def get_fire_data(lat: float, lon: float):
     risk_result = insert_risk_and_alert(zone_id, risk["risk_index"])
     logger.info(f"Risk score inserted — score_id: {risk_result['score_id']}, alert: {risk_result['alert_level']}")
 
-    # returning JSON format with given variables
     return {
-        "temp" : round(float(data["temperature_2m"]), 2),
-        "wind_speed" : round(float(data["wind_speed_10m"]),2),
+        "relevant": True,
+        "land_cover": land_cover["land_cover_name"],
+        "temp": round(float(data["temperature_2m"]), 2),
+        "wind_speed": round(float(data["wind_speed_10m"]), 2),
         "risk_index": risk["risk_index"],
         "alert_level": risk["alert_level"]
     }
