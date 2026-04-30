@@ -6,7 +6,7 @@ def get_moisture_state(zone_id: str) -> dict:
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT ffmc_prev, dmc_prev, dc_prev FROM moisture_state WHERE zone_id = ?",
+        "SELECT ffmc_prev, dmc_prev, dc_prev, updated_at FROM moisture_state WHERE zone_id = ?",
         (zone_id,)
     )
     row = cursor.fetchone()
