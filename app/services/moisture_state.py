@@ -1,4 +1,4 @@
-from db import get_connection
+from app.database.db import get_connection
 from datetime import datetime
 
 def get_moisture_state(zone_id: str) -> dict:
