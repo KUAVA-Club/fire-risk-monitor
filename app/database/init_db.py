@@ -4,7 +4,7 @@ Run this file once to create the SQLite database with all required tables.
     python init_db.py
 """
 
-from db import get_connection
+from .db import get_connection
 
 
 def init_database():
