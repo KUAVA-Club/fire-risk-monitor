@@ -239,6 +239,36 @@ function drawCell(lat, lng, gs) {
     const data = await fetchFireData(centerLat, centerLng);
     
     if (data) {
+
+      if (data.is_relevant === false || data.alert_level === "NONE") { 
+  
+        const bgColor = "#6c757d"; 
+        const icon = "🌊 / ⛰️";     
+      
+        rect.setStyle({ 
+          color: bgColor, 
+          fillColor: bgColor, 
+          fillOpacity: 0.5 
+        });
+
+        //console.log("Showing Not Applicable popup at:", centerLat, centerLng);
+      
+        const popupContent = `
+          <div style="font-family:sans-serif; text-align:center; padding: 10px; min-width: 160px;">
+            <div style="font-size: 24px; margin-bottom: 5px;">${icon}</div>
+            <b style="color: ${bgColor}; font-size: 14px; text-transform: uppercase;">Not Applicable</b><br>
+            <span style="color: #444; font-weight: bold; font-size: 13px;">Water Body / Mountain</span><br>
+            <hr style="border:0; border-bottom:1px solid #eee; margin: 10px 0;">
+            <span style="color: #888; font-size: 11px;">Fire risk monitoring is disabled for this terrain type.</span>
+          </div>
+        `;
+
+        rect.bindPopup(popupContent).openPopup();
+        
+        return; 
+      }
+
+      // --- ORIGINAL FIRE RISK LOGIC CONTINUES ---
       const fri = data.risk_index; 
       const style = getFRIStyle(fri);
       style.label = data.alert_level; 

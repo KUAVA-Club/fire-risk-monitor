@@ -67,6 +67,9 @@ def getData(lat,long):
 
     datas["lat"] = lat
     datas["long"] = long
+    # --- NEW: Added elevation so fire.py can see it! ---
+    datas["elevation"] = float(response.Elevation()) 
+    # ---------------------------------------------------
     datas["temperature_2m"] = hourly_temperature_2m[idx]
     datas["soil_temperature_0cm"] = hourly_soil_temperature_0cm[idx]
     datas["soil_moisture_0_to_1cm"] = hourly_soil_moisture_0_to_1cm[idx]
