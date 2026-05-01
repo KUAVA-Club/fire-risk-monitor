@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+jinja2
+openmeteo_requests
+requests_cache
+retry_requests
+pandas
+httpx 
+python-dotenv 
+tenacity

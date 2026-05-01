@@ -1,9 +1,13 @@
 async function fetchFireData(lat, lon) {
   try {
     const response = await fetch(`http://127.0.0.1:8000/fire/data?lat=${lat}&lon=${lon}`);
+<<<<<<< HEAD
     
     if (!response.ok) throw new Error("Backend not responding");
 
+=======
+    if (!response.ok) throw new Error("Backend not responding");
+>>>>>>> 9674b6cf1fe990da935a363dea82b2621e47c1e1
     const data = await response.json();
     return {
       temp: data.temp,
@@ -16,6 +20,74 @@ async function fetchFireData(lat, lon) {
     return null;
   }
 }
+<<<<<<< HEAD
+=======
+
+// MOCK: replace real backend fetch with random test data
+// async function fetchFireData(lat, lon) {
+//   await new Promise(r => setTimeout(r, 150)); // simulate network delay
+
+//   const risk_index  = Math.random() * 100;       // 0–100
+//   const temp        = 15 + Math.random() * 45;   // 15–60 °C
+//   const wind_speed  = Math.random() * 120;        // 0–120 km/h
+
+//   const level = RISK_LEVELS.find(l => risk_index >= l.min);
+//   const alert_level = level ? level.label : "LOW";
+
+//   return {
+//     temp: +temp.toFixed(1),
+//     wind_speed: +wind_speed.toFixed(1),
+//     risk_index: +risk_index.toFixed(2),
+//     alert_level
+//   };
+// }
+
+const RISK_LEVELS = [
+  { min: 85, color: "#8B0000", label: "EXTREME",   action: "All channels + evacuation readiness" },
+  { min: 70, color: "#ff0000", label: "VERY HIGH", action: "SMS + dispatch prep" },
+  { min: 50, color: "#ffa500", label: "HIGH",      action: "Immediate email alert" },
+  { min: 25, color: "#ffff00", label: "MODERATE",  action: "Daily digest + forecast review" },
+  { min: 0,  color: "#00ff00", label: "LOW",       action: "Log only (review EOD)" }
+];
+
+async function fetchAndLoadDangerZones() {
+  var foundSomeData = false;
+  try {
+    const response = await fetch('/fire/dangerZones');
+    const zones = await response.json();
+    for (const zone of zones) {
+      const lat = zone.lat ?? zone.latitude;
+      const lng = zone.lon ?? zone.longitude ?? zone.lng;
+      const fri = zone.fri ?? getFRIFromData(zone.temp, zone.wind_speed);
+
+      if (lat == null || lng == null || fri == null) continue;
+      foundSomeData = true;
+      const style = getFRIStyle(fri);
+      const key   = cellKey(lat, lng);
+
+      clickedCells[key] = { fri, style };
+
+      // Only show in the sidebar if risk is high enough
+      if (fri >= 70) {
+        addToSidebar(lat, lng, fri, style);
+      }
+    }
+
+    if (!foundSomeData) {
+      document.getElementById("sidebar-empty").textContent = "No serious fire risks are present.";
+    }
+
+    drawGrid();
+
+  } catch (error) {
+    console.error('Failed to load danger zones:', error);
+  }
+}
+
+
+
+const DEFAULT_STYLE = RISK_LEVELS[RISK_LEVELS.length - 1];
+>>>>>>> 9674b6cf1fe990da935a363dea82b2621e47c1e1
 
 const RISK_LEVELS = [
   { min: 85, color: "#8B0000", label: "EXTREME",   action: "All channels + evacuation readiness" },
@@ -229,21 +301,39 @@ document.getElementById('go-btn').onclick = function (e) {
 
   map.flyTo([lat, lng], 12, { animate: true, duration: 1.5 });
 };
+<<<<<<< HEAD
 
 map.on('moveend', function() {
   isFlying = false; 
   drawGrid();
 });
 
+=======
+
+map.on('moveend', function() {
+  isFlying = false; 
+  drawGrid();
+});
+
+>>>>>>> 9674b6cf1fe990da935a363dea82b2621e47c1e1
 document.getElementById('reset-btn').onclick = function (e) {
   if (e) e.preventDefault();
 
   focusGrid = null;
+<<<<<<< HEAD
 
   document.getElementById('lat-input').value = '';
   document.getElementById('lng-input').value = '';
   gridLayer.clearLayers();
 
+=======
+
+  document.getElementById('lat-input').value = '';
+  document.getElementById('lng-input').value = '';
+  gridLayer.clearLayers();
+  map.closePopup();
+
+>>>>>>> 9674b6cf1fe990da935a363dea82b2621e47c1e1
   map.flyTo([20, 0], 2, {
     animate: true,
     duration: 1
@@ -269,4 +359,10 @@ legend.onAdd = function (map) {
   return div;
 };
 
+<<<<<<< HEAD
 legend.addTo(map);
+=======
+legend.addTo(map);
+
+fetchAndLoadDangerZones();
+>>>>>>> 9674b6cf1fe990da935a363dea82b2621e47c1e1
