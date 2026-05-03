@@ -10,6 +10,7 @@ from database.crud.danger_zones import get_cached_danger_zones
 from services.land_cover_api import get_land_cover
 from services.grid_sampler import assess_grid_fire_risk
 from core.logger import logger
+from services.risk_scorer import calculate_fire_risk
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
