@@ -324,7 +324,7 @@ document.getElementById('go-btn').onclick = function (e) {
   const lng = parseFloat(document.getElementById('lng-input').value);
 
   if (isNaN(lat) || isNaN(lng)) return;
-
+  if (!(-90 < lat < 90) || !(-180 < lng < 180)) return;
   isFlying = true; 
   focusGrid = { lat, lng, size: FINEST_SIZE };
 
