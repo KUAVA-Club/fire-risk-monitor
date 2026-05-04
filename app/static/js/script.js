@@ -79,8 +79,6 @@ async function fetchAndLoadDangerZones() {
   }
 }
 
-
-
 const DEFAULT_STYLE = RISK_LEVELS[RISK_LEVELS.length - 1];
 
 function getFRIFromData(temp, windSpeed) {
@@ -101,6 +99,45 @@ function cellKey(lat, lng) {
 
 var dangerousZones = [];
 
+function createCardElement(lat, lng, fri, style) {
+  var card = document.createElement('div');
+  card.className = 'zone-card';
+  card.style.borderColor = style.color;
+  card.style.cursor = 'pointer'; 
+
+  card.innerHTML =
+    '<span class="zone-label" style="color:' + style.color + '">' + style.label + '</span><br>' +
+    'FRI: ' + fri.toFixed(1) + '<br>' +
+    '🌍 ' + lat.toFixed(5) + ', ' + lng.toFixed(5) + '<br>' +
+    '⚙️ ' + style.action;
+
+  card.onclick = function() {
+    focusGrid = { lat: lat, lng: lng, size: FINEST_SIZE };
+    isFlying = true;
+
+    document.getElementById('lat-input').value = lat.toFixed(5);
+    document.getElementById('lng-input').value = lng.toFixed(5);
+
+    map.flyTo([lat, lng], 12, { animate: true, duration: 1.5 });
+
+    setTimeout(() => {
+      L.popup({ autoPan: false, closeButton: true })
+        .setLatLng([lat, lng])
+        .setContent(`
+          <div style="font-family:monospace;font-size:13px;line-height:1.7">
+            <b>🔥 Fire Risk: ${style.label}</b><br>
+            FRI: ${fri.toFixed(2)}<br>
+            ⚙️ Action: ${style.action}<br>
+            🌍 Location: ${lat.toFixed(5)}, ${lng.toFixed(5)}
+          </div>
+        `)
+        .openOn(map);
+    }, 1500);
+  };
+
+  return card;
+}
+
 function addToSidebar(lat, lng, fri, style) {
   var key = cellKey(lat, lng);
   var exists = dangerousZones.some(z => z.key === key);
@@ -109,15 +146,7 @@ function addToSidebar(lat, lng, fri, style) {
   dangerousZones.push({ key, lat, lng, fri, style });
   document.getElementById('sidebar-empty').style.display = 'none';
 
-  var card = document.createElement('div');
-  card.className = 'zone-card';
-  card.style.borderColor = style.color;
-  card.innerHTML =
-    '<span class="zone-label" style="color:' + style.color + '">' + style.label + '</span><br>' +
-    'FRI: ' + fri.toFixed(1) + '<br>' +
-    '🌍 ' + lat.toFixed(5) + ', ' + lng.toFixed(5) + '<br>' +
-    '⚙️ ' + style.action;
-
+  var card = createCardElement(lat, lng, fri, style);
   document.getElementById('zone-list').appendChild(card);
 }
 
@@ -211,21 +240,39 @@ function drawCell(lat, lng, gs) {
     rect.setStyle({ color: "#3388ff", fillOpacity: 0.6 });
 
     const data = await fetchFireData(centerLat, centerLng);
+    
+    if (data) {
 
-    if (data && data.relevant === false) {
-      rect.setStyle({ color: "#888", fillColor: "#888", fillOpacity: 0.35 });
-      L.popup({ autoPan: false, closeButton: true })
-        .setLatLng([centerLat, centerLng])
-        .setContent(`
-          <div style="font-family:monospace;font-size:13px;line-height:1.7">
-            <b>Not relevant for fire risk</b><br>
-            Terrain: ${data.land_cover}<br>
-            ${data.reason}
+      if (data.is_relevant === false || data.alert_level === "NONE") { 
+  
+        const bgColor = "#6c757d"; 
+        const icon = "🌊 / ⛰️";     
+      
+        rect.setStyle({ 
+          color: bgColor, 
+          fillColor: bgColor, 
+          fillOpacity: 0.5 
+        });
+
+        //console.log("Showing Not Applicable popup at:", centerLat, centerLng);
+      
+        const popupContent = `
+          <div style="font-family:sans-serif; text-align:center; padding: 10px; min-width: 160px;">
+            <div style="font-size: 24px; margin-bottom: 5px;">${icon}</div>
+            <b style="color: ${bgColor}; font-size: 14px; text-transform: uppercase;">Not Applicable</b><br>
+            <span style="color: #444; font-weight: bold; font-size: 13px;">Water Body / Mountain</span><br>
+            <hr style="border:0; border-bottom:1px solid #eee; margin: 10px 0;">
+            <span style="color: #888; font-size: 11px;">Fire risk monitoring is disabled for this terrain type.</span>
           </div>
-        `)
-        .openOn(map);
-    } else if (data && data.relevant !== false) {
-      const fri = data.risk_index;
+        `;
+
+        rect.bindPopup(popupContent).openPopup();
+        
+        return; 
+      }
+
+      // --- ORIGINAL FIRE RISK LOGIC CONTINUES ---
+      const fri = data.risk_index; 
       const style = getFRIStyle(fri);
       style.label = data.alert_level;
 
@@ -260,14 +307,7 @@ function rebuildSidebar() {
   var list = document.getElementById('zone-list');
   list.innerHTML = '';
   dangerousZones.forEach(function(z) {
-    var card = document.createElement('div');
-    card.className = 'zone-card';
-    card.style.borderColor = z.style.color;
-    card.innerHTML =
-      '<span class="zone-label" style="color:' + z.style.color + '">' + z.style.label + '</span><br>' +
-      'FRI: ' + z.fri.toFixed(1) + '<br>' +
-      '🌍 ' + z.lat.toFixed(5) + ', ' + z.lng.toFixed(5) + '<br>' +
-      '⚙️ ' + z.style.action;
+    var card = createCardElement(z.lat, z.lng, z.fri, z.style);
     list.appendChild(card);
   });
   document.getElementById('sidebar-empty').style.display =
@@ -275,10 +315,6 @@ function rebuildSidebar() {
 }
 
 drawGrid();
-
-map.on('moveend', function() {
-  drawGrid();
-});
 
 let isFlying = false;
 

@@ -1,3 +1,8 @@
+import sys
+import os
+import requests
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from fastapi import APIRouter
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
@@ -33,7 +38,7 @@ def get_fire_data(lat: float, lon: float):
     land_cover = get_land_cover(lat, lon)
     if not land_cover["relevant"]:
         return {
-            "relevant": False,
+            "is_relevant": False,
             "land_cover": land_cover["land_cover_name"],
             "reason": land_cover["reason"]
         }
@@ -42,7 +47,7 @@ def get_fire_data(lat: float, lon: float):
     if cached:
         logger.info(f"Cache hit — returning data from {cached['computed_at']}")
         return {
-            "relevant": True,
+            "is_relevant": True,
             "land_cover": land_cover["land_cover_name"],
             "temp": cached["temp"],
             "wind_speed": cached["wind_speed"],
@@ -68,14 +73,13 @@ def get_fire_data(lat: float, lon: float):
     logger.info(f"Risk score inserted — score_id: {risk_result['score_id']}, alert: {risk_result['alert_level']}")
 
     return {
-        "relevant": True,
+        "is_relevant": True,
         "land_cover": land_cover["land_cover_name"],
         "temp": grid_result["temp"],
         "wind_speed": grid_result["wind_speed"],
         "risk_index": grid_result["risk_index"],
         "alert_level": grid_result["alert_level"]
     }
-
 
 @router.get("/fire/dangerZones")
 def get_danger_zones():
