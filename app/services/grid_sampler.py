@@ -1,13 +1,20 @@
 import openmeteo_requests
 import pandas as pd
 import requests_cache
+import uuid
 from retry_requests import retry
 from datetime import datetime
-from services.risk_scorer import calculate_fire_risk, get_alert_level
-from core.logger import logger
+from app.services.risk_scorer import calculate_fire_risk, get_alert_level
+from app.core.logger import logger
 
 GRID_SIZE = 0.05
 ALPHA = 0.4
+
+
+def _get_or_create_zone_id(lat: float, lon: float) -> str:
+    """Derive a stable zone_id from the grid cell's snapped coordinates."""
+    from app.database.crud.grid import create_grid_zone
+    return create_grid_zone({"lat": lat, "long": lon})
 
 
 def _get_sub_locations(lat: float, lon: float) -> list[tuple[float, float]]:
@@ -84,7 +91,7 @@ def _fetch_multi_weather(points: list[tuple[float, float]]) -> list[dict]:
     return results
 
 
-def compute_grid_fri(sub_results: list[dict]) -> dict:
+def compute_grid_fri(sub_results: list[dict], zone_id: str) -> dict:
     """
     Compute composite FRI from 9 sub-location results.
 
@@ -97,8 +104,10 @@ def compute_grid_fri(sub_results: list[dict]) -> dict:
     wind_speeds = []
     temps = []
 
+    last_fwi_codes = {}
     for sub in sub_results:
         risk = calculate_fire_risk(
+            zone_id,
             sub["temperature_2m"],
             sub["wind_speed_10m"],
             sub["relative_humidity_2m"],
@@ -108,6 +117,7 @@ def compute_grid_fri(sub_results: list[dict]) -> dict:
         fri_values.append(risk["risk_index"])
         wind_speeds.append(sub["wind_speed_10m"])
         temps.append(sub["temperature_2m"])
+        last_fwi_codes = {"ffmc": risk["ffmc"], "dmc": risk["dmc"], "dc": risk["dc"]}
 
     n = len(fri_values)
     max_fri = max(fri_values)
@@ -131,8 +141,10 @@ def compute_grid_fri(sub_results: list[dict]) -> dict:
         "max_fri": round(max_fri, 2),
         "avg_fri": round(weighted_avg, 2),
         "sub_fri_values": [round(v, 2) for v in fri_values],
+        "ffmc": last_fwi_codes.get("ffmc"),
+        "dmc": last_fwi_codes.get("dmc"),
+        "dc": last_fwi_codes.get("dc"),
     }
-
 
 def assess_grid_fire_risk(lat: float, lon: float) -> dict:
     """
@@ -142,9 +154,13 @@ def assess_grid_fire_risk(lat: float, lon: float) -> dict:
     points = _get_sub_locations(lat, lon)
     logger.info(f"Fetching weather for 9 sub-locations in grid ({lat}, {lon})")
 
+    zone_id = _get_or_create_zone_id(lat, lon)
+    logger.info(f"Using zone_id: {zone_id} for grid ({lat}, {lon})")
+
     sub_results = _fetch_multi_weather(points)
 
-    result = compute_grid_fri(sub_results)
+    result = compute_grid_fri(sub_results, zone_id)
     result["center_weather"] = sub_results[4]
+    result["zone_id"] = zone_id  # expose so the route doesn't need to re-create it
 
     return result

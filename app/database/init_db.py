@@ -29,6 +29,10 @@ def init_database():
             humidity_pct     REAL,
             wind_speed_kmh   REAL,
             precipitation_mm REAL,
+            soil_moisture    REAL,
+            ffmc             REAL,
+            dmc              REAL,
+            dc               REAL,
             source_api       TEXT,
             recorded_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (zone_id) REFERENCES grid_zone(id)
@@ -82,21 +86,12 @@ def init_database():
             alert_level TEXT NOT NULL,
             fetched_at  DATETIME DEFAULT CURRENT_TIMESTAMP
         );
-                         
-        CREATE TABLE IF NOT EXISTS moisture_state (
-            zone_id     TEXT PRIMARY KEY,
-            ffmc_prev   REAL NOT NULL DEFAULT 85.0,
-            dmc_prev    REAL NOT NULL DEFAULT 6.0,
-            dc_prev     REAL NOT NULL DEFAULT 15.0,
-            updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (zone_id) REFERENCES grid_zone(id)
-        );
 
         CREATE INDEX IF NOT EXISTS idx_danger_zone_cache_fetched
             ON danger_zone_cache(fetched_at);
         CREATE INDEX IF NOT EXISTS idx_danger_zone_cache_alert
             ON danger_zone_cache(alert_level);
-                         
+
     """)
 
     conn.commit()

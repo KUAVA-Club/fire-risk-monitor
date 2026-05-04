@@ -72,8 +72,8 @@ Canadian Forest Fire Weather Index System.* Forestry Technical Report 33.
 
 To run the program, first run ```init_db.py``` to initialize database that will be used. It will create file named ```file_monitor.db``` containing all tables.
 
-To run the program, from **/app directory** run:
+To run the program, from **/ directory** run:
 ```
-uvicorn main:app --reload
+uvicorn app.main:app --reload
 ```
 Server will start whose address will be printed. Home page is ```[local_address]/map```.

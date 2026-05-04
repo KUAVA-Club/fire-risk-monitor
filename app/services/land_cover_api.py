@@ -1,5 +1,5 @@
 import requests
-from core.logger import logger
+from app.core.logger import logger
 
 MODIS_URL = "https://modis.ornl.gov/rst/api/v1/MCD12Q1/subset"
 

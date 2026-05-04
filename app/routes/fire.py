@@ -1,24 +1,19 @@
 from fastapi import APIRouter
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
-from database.crud.weather import create_weather_reading
-from database.crud.grid import create_grid_zone
-from database.crud.risk import insert_risk_and_alert
-from database.crud.retrieval import get_recent_data
+from app.database.crud.weather import create_weather_reading
+from app.database.crud.grid import create_grid_zone
+from app.database.crud.risk import insert_risk_and_alert
+from app.database.crud.retrieval import get_recent_data
 
-from database.crud.danger_zones import get_cached_danger_zones
-from services.land_cover_api import get_land_cover
-from services.grid_sampler import assess_grid_fire_risk
-from core.logger import logger
-from services.risk_scorer import calculate_fire_risk
+from app.database.crud.danger_zones import get_cached_danger_zones
+from app.services.land_cover_api import get_land_cover
+from app.services.grid_sampler import assess_grid_fire_risk
+from app.core.logger import logger
+from app.services.risk_scorer import calculate_fire_risk
 
 router = APIRouter()
-templates = Jinja2Templates(directory="templates")
-
-# @router.get("/")
-# def redirctionFromRoot(request: Request):
-#     url = request.url_for("/map")
-#     return Request.RedirectResponse(url="/map")
+templates = Jinja2Templates(directory="app/templates")
 
 # returns main page with map
 # awaits get request
@@ -59,10 +54,13 @@ def get_fire_data(lat: float, lon: float):
     grid_result = assess_grid_fire_risk(lat, lon)
     center = grid_result["center_weather"]
 
-    zone_id = create_grid_zone(center)
-    logger.info(f"Grid zone inserted — zone_id: {zone_id}")
+    zone_id = grid_result["zone_id"]  # already created inside assess_grid_fire_risk
+    logger.info(f"Grid zone — zone_id: {zone_id}")
 
     center["zone_id"] = zone_id
+    center["ffmc"] = grid_result.get("ffmc")
+    center["dmc"]  = grid_result.get("dmc")
+    center["dc"]   = grid_result.get("dc")
     create_weather_reading(center)
     logger.info(f"Weather reading inserted for zone_id: {zone_id}")
 
