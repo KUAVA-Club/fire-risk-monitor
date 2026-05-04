@@ -324,11 +324,16 @@ document.getElementById('go-btn').onclick = function (e) {
   const lng = parseFloat(document.getElementById('lng-input').value);
 
   if (isNaN(lat) || isNaN(lng)) return;
-  if (!(-90 < lat < 90) || !(-180 < lng < 180)) return;
-  isFlying = true; 
-  focusGrid = { lat, lng, size: FINEST_SIZE };
-
-  map.flyTo([lat, lng], 12, { animate: true, duration: 1.5 });
+  if ((lat < 90) && (lat > -90) && (lng < 180) && (lng > -180) ) {
+    isFlying = true; 
+    focusGrid = { lat, lng, size: FINEST_SIZE };
+  
+    map.flyTo([lat, lng], 12, { animate: true, duration: 1.5 });
+  } else {
+    alert("Invalid longtitude / latitude")
+    document.getElementById('lat-input').value = '';
+    document.getElementById('lng-input').value = '';
+  }
 };
 
 map.on('moveend', function() {
