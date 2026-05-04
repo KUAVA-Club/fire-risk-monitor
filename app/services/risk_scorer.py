@@ -1,5 +1,6 @@
 import math
 from datetime import datetime
+from .moisture_state import get_moisture_state, save_moisture_state
 
 def compute_ffmc(temp: float, rh: float, wind: float, rain: float, ffmc_prev: float = 85.0) -> float:
     mo = 147.2 * (101 - ffmc_prev) / (59.5 + ffmc_prev)
@@ -75,14 +76,16 @@ def compute_fwi(isi: float, bui: float) -> float:
         return math.exp(2.72 * (0.434 * math.log(b))**0.647)
     return b
 
-def calculate_fwi_from_weather(temp: float, rh: float, wind: float, rain: float, month: int) -> float:
-    ffmc = compute_ffmc(temp, rh, wind, rain)
-    dmc  = compute_dmc(temp, rh, rain, month=month)
-    dc   = compute_dc(temp, rain, month=month)
+def calculate_fwi_from_weather(temp: float, rh: float, wind: float, rain: float, month: int,
+                               ffmc_prev: float = 85.0, dmc_prev: float = 6.0, dc_prev: float = 15.0
+                                 ) -> tuple[float, float, float, float]:
+    ffmc = compute_ffmc(temp, rh, wind, rain, ffmc_prev)
+    dmc  = compute_dmc(temp, rh, rain, dmc_prev, month)
+    dc   = compute_dc(temp, rain, dc_prev, month)
     isi  = compute_isi(wind, ffmc)
     bui  = compute_bui(dmc, dc)
     fwi  = compute_fwi(isi, bui)
-    return round(fwi, 2)
+    return round(fwi, 2), ffmc, dmc, dc
 
 
 def normalize_fwi(raw_fwi: float) -> float:
@@ -101,14 +104,23 @@ def get_alert_level(fri: float) -> str:
     return "EXTREME"
 
 
-def calculate_fire_risk(temperature, wind_speed, humidity, precipitation, soil_moisture) -> dict:
+def calculate_fire_risk(zone_id: str, temperature, wind_speed, humidity, precipitation, soil_moisture) -> dict:
     month = datetime.now().month
-    fwi = calculate_fwi_from_weather(temperature, humidity, wind_speed, precipitation, month)
+    moisture_state = get_moisture_state(zone_id)
+    fwi, ffmc, dmc, dc = calculate_fwi_from_weather(temperature, humidity, wind_speed, precipitation, month,
+                                                    ffmc_prev=moisture_state["ffmc_prev"],
+                                                    dmc_prev=moisture_state["dmc_prev"],
+                                                    dc_prev=moisture_state["dc_prev"]
+                                                    )
+    save_moisture_state(zone_id, ffmc, dmc, dc)
     ndvi = 1 - (soil_moisture * 2)  # TODO: replace with actual NDVI from API
     fri = compute_fri(fwi, ndvi)
     level = get_alert_level(fri)
     return {
         "risk_index": fri,
-        "alert_level": level
+        "alert_level": level,
+        "ffmc": ffmc,
+        "dmc": dmc,
+        "dc": dc,
     }
 

@@ -1,9 +1,12 @@
 async function fetchFireData(lat, lon) {
   try {
-    const response = await fetch(`http://127.0.0.1:8000/fire/data?lat=${lat}&lon=${lon}`);
+    const response = await fetch(`/fire/data?lat=${lat}&lon=${lon}`);
     if (!response.ok) throw new Error("Backend not responding");
     const data = await response.json();
     return {
+      relevant: data.relevant,
+      land_cover: data.land_cover,
+      reason: data.reason || null,
       temp: data.temp,
       wind_speed: data.wind_speed,
       risk_index: data.risk_index,
@@ -271,32 +274,30 @@ function drawCell(lat, lng, gs) {
       // --- ORIGINAL FIRE RISK LOGIC CONTINUES ---
       const fri = data.risk_index; 
       const style = getFRIStyle(fri);
-      style.label = data.alert_level; 
-  
+      style.label = data.alert_level;
+
       clickedCells[key] = { fri, style };
       rect.setStyle({ color: style.color, fillColor: style.color, fillOpacity: 0.45 });
-    
+
       if (fri >= 70) {
         addToSidebar(centerLat, centerLng, fri, style);
       }
 
-      L.popup({
-        autoPan: false,
-        closeButton: true
-      })
-      .setLatLng([centerLat, centerLng])
-      .setContent(`
-        <div style="font-family:monospace;font-size:13px;line-height:1.7">
-          <b>🔥 Fire Risk: ${data.alert_level}</b><br>
-          FRI: ${fri.toFixed(2)}<br>
-          ⚙️ Action: ${style.action}<br>
-          🌡️ Temp: ${data.temp}°C<br>
-          💨 Wind: ${data.wind_speed} km/h
-        </div>
-      `)
-      .openOn(map);
+      L.popup({ autoPan: false, closeButton: true })
+        .setLatLng([centerLat, centerLng])
+        .setContent(`
+          <div style="font-family:monospace;font-size:13px;line-height:1.7">
+            <b>Fire Risk: ${data.alert_level}</b><br>
+            Terrain: ${data.land_cover}<br>
+            FRI: ${fri.toFixed(2)}<br>
+            Action: ${style.action}<br>
+            Temp: ${data.temp} C<br>
+            Wind: ${data.wind_speed} km/h
+          </div>
+        `)
+        .openOn(map);
     } else {
-      rect.setStyle({ color: "#ff0000", fillOpacity: 0.3 }); 
+      rect.setStyle({ color: "#ff0000", fillOpacity: 0.3 });
       alert("Backend unreachable");
     }
   });

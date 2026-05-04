@@ -4,7 +4,7 @@ Run this file once to create the SQLite database with all required tables.
     python init_db.py
 """
 
-from db import get_connection
+from .db import get_connection
 
 
 def init_database():
@@ -29,6 +29,10 @@ def init_database():
             humidity_pct     REAL,
             wind_speed_kmh   REAL,
             precipitation_mm REAL,
+            soil_moisture    REAL,
+            ffmc             REAL,
+            dmc              REAL,
+            dc               REAL,
             source_api       TEXT,
             recorded_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (zone_id) REFERENCES grid_zone(id)
@@ -72,6 +76,22 @@ def init_database():
             returned_at   DATETIME,
             FOREIGN KEY (alert_id) REFERENCES alert_event(id)
         );
+
+        CREATE TABLE IF NOT EXISTS danger_zone_cache (
+            id          TEXT PRIMARY KEY,
+            lat         REAL NOT NULL,
+            lon         REAL NOT NULL,
+            fri         REAL NOT NULL,
+            fire_count  INTEGER NOT NULL,
+            alert_level TEXT NOT NULL,
+            fetched_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_danger_zone_cache_fetched
+            ON danger_zone_cache(fetched_at);
+        CREATE INDEX IF NOT EXISTS idx_danger_zone_cache_alert
+            ON danger_zone_cache(alert_level);
+
     """)
 
     conn.commit()

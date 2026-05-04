@@ -1,5 +1,5 @@
-from database.db import get_connection
-from database.crud.grid import GRID_SIZE
+from app.database.db import get_connection
+from app.database.crud.grid import GRID_SIZE
 
 
 def get_recent_data(lat: float, lon: float) -> dict | None:
