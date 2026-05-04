@@ -4,7 +4,7 @@ async function fetchFireData(lat, lon) {
     if (!response.ok) throw new Error("Backend not responding");
     const data = await response.json();
     return {
-      relevant: data.relevant,
+      is_relevant: data.is_relevant,
       land_cover: data.land_cover,
       reason: data.reason || null,
       temp: data.temp,
@@ -243,10 +243,10 @@ function drawCell(lat, lng, gs) {
     
     if (data) {
 
-      if (data.is_relevant === false || data.alert_level === "NONE") { 
+      if (data.is_relevant === false) { 
   
         const bgColor = "#6c757d"; 
-        const icon = "🌊 / ⛰️";     
+        const icon = "⛔️";     
       
         rect.setStyle({ 
           color: bgColor, 
@@ -257,10 +257,10 @@ function drawCell(lat, lng, gs) {
         //console.log("Showing Not Applicable popup at:", centerLat, centerLng);
       
         const popupContent = `
-          <div style="font-family:sans-serif; text-align:center; padding: 10px; min-width: 160px;">
+          <div style="font-family: monospace;text-align:center; padding: 10px; min-width: 160px;">
             <div style="font-size: 24px; margin-bottom: 5px;">${icon}</div>
             <b style="color: ${bgColor}; font-size: 14px; text-transform: uppercase;">Not Applicable</b><br>
-            <span style="color: #444; font-weight: bold; font-size: 13px;">Water Body / Mountain</span><br>
+            <span style="color: #444; font-weight: bold; font-size: 13px;">${data.land_cover}</span><br>
             <hr style="border:0; border-bottom:1px solid #eee; margin: 10px 0;">
             <span style="color: #888; font-size: 11px;">Fire risk monitoring is disabled for this terrain type.</span>
           </div>
@@ -287,12 +287,12 @@ function drawCell(lat, lng, gs) {
         .setLatLng([centerLat, centerLng])
         .setContent(`
           <div style="font-family:monospace;font-size:13px;line-height:1.7">
-            <b>Fire Risk: ${data.alert_level}</b><br>
-            Terrain: ${data.land_cover}<br>
-            FRI: ${fri.toFixed(2)}<br>
-            Action: ${style.action}<br>
-            Temp: ${data.temp} C<br>
-            Wind: ${data.wind_speed} km/h
+            <b>🔥 Fire Risk: ${data.alert_level}</b><br>
+            🪨 Terrain: ${data.land_cover}<br>
+            #️⃣ FRI: ${fri.toFixed(2)}<br>
+            ⚙️ Action: ${style.action}<br>
+            🌡️ Temp: ${data.temp} C<br>
+            🌬️ Wind: ${data.wind_speed} km/h
           </div>
         `)
         .openOn(map);
