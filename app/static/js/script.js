@@ -4,6 +4,9 @@ async function fetchFireData(lat, lon) {
     if (!response.ok) throw new Error("Backend not responding");
     const data = await response.json();
     return {
+      is_relevant: data.is_relevant,
+      land_cover: data.land_cover,
+      reason: data.reason || null,
       temp: data.temp,
       wind_speed: data.wind_speed,
       risk_index: data.risk_index,
@@ -76,8 +79,6 @@ async function fetchAndLoadDangerZones() {
   }
 }
 
-
-
 const DEFAULT_STYLE = RISK_LEVELS[RISK_LEVELS.length - 1];
 
 function getFRIFromData(temp, windSpeed) {
@@ -98,6 +99,45 @@ function cellKey(lat, lng) {
 
 var dangerousZones = [];
 
+function createCardElement(lat, lng, fri, style) {
+  var card = document.createElement('div');
+  card.className = 'zone-card';
+  card.style.borderColor = style.color;
+  card.style.cursor = 'pointer'; 
+
+  card.innerHTML =
+    '<span class="zone-label" style="color:' + style.color + '">' + style.label + '</span><br>' +
+    'FRI: ' + fri.toFixed(1) + '<br>' +
+    '🌍 ' + lat.toFixed(5) + ', ' + lng.toFixed(5) + '<br>' +
+    '⚙️ ' + style.action;
+
+  card.onclick = function() {
+    focusGrid = { lat: lat, lng: lng, size: FINEST_SIZE };
+    isFlying = true;
+
+    document.getElementById('lat-input').value = lat.toFixed(5);
+    document.getElementById('lng-input').value = lng.toFixed(5);
+
+    map.flyTo([lat, lng], 12, { animate: true, duration: 1.5 });
+
+    setTimeout(() => {
+      L.popup({ autoPan: false, closeButton: true })
+        .setLatLng([lat, lng])
+        .setContent(`
+          <div style="font-family:monospace;font-size:13px;line-height:1.7">
+            <b>🔥 Fire Risk: ${style.label}</b><br>
+            FRI: ${fri.toFixed(2)}<br>
+            ⚙️ Action: ${style.action}<br>
+            🌍 Location: ${lat.toFixed(5)}, ${lng.toFixed(5)}
+          </div>
+        `)
+        .openOn(map);
+    }, 1500);
+  };
+
+  return card;
+}
+
 function addToSidebar(lat, lng, fri, style) {
   var key = cellKey(lat, lng);
   var exists = dangerousZones.some(z => z.key === key);
@@ -106,15 +146,7 @@ function addToSidebar(lat, lng, fri, style) {
   dangerousZones.push({ key, lat, lng, fri, style });
   document.getElementById('sidebar-empty').style.display = 'none';
 
-  var card = document.createElement('div');
-  card.className = 'zone-card';
-  card.style.borderColor = style.color;
-  card.innerHTML =
-    '<span class="zone-label" style="color:' + style.color + '">' + style.label + '</span><br>' +
-    'FRI: ' + fri.toFixed(1) + '<br>' +
-    '🌍 ' + lat.toFixed(5) + ', ' + lng.toFixed(5) + '<br>' +
-    '⚙️ ' + style.action;
-
+  var card = createCardElement(lat, lng, fri, style);
   document.getElementById('zone-list').appendChild(card);
 }
 
@@ -210,34 +242,62 @@ function drawCell(lat, lng, gs) {
     const data = await fetchFireData(centerLat, centerLng);
     
     if (data) {
+
+      if (data.is_relevant === false) { 
+  
+        const bgColor = "#6c757d"; 
+        const icon = "⛔️";     
+      
+        rect.setStyle({ 
+          color: bgColor, 
+          fillColor: bgColor, 
+          fillOpacity: 0.5 
+        });
+
+        //console.log("Showing Not Applicable popup at:", centerLat, centerLng);
+      
+        const popupContent = `
+          <div style="font-family: monospace;text-align:center; padding: 10px; min-width: 160px;">
+            <div style="font-size: 24px; margin-bottom: 5px;">${icon}</div>
+            <b style="color: ${bgColor}; font-size: 14px; text-transform: uppercase;">Not Applicable</b><br>
+            <span style="color: #444; font-weight: bold; font-size: 13px;">${data.land_cover}</span><br>
+            <hr style="border:0; border-bottom:1px solid #eee; margin: 10px 0;">
+            <span style="color: #888; font-size: 11px;">Fire risk monitoring is disabled for this terrain type.</span>
+          </div>
+        `;
+
+        rect.bindPopup(popupContent).openPopup();
+        
+        return; 
+      }
+
+      // --- ORIGINAL FIRE RISK LOGIC CONTINUES ---
       const fri = data.risk_index; 
       const style = getFRIStyle(fri);
-      style.label = data.alert_level; 
-  
+      style.label = data.alert_level;
+
       clickedCells[key] = { fri, style };
       rect.setStyle({ color: style.color, fillColor: style.color, fillOpacity: 0.45 });
-    
+
       if (fri >= 70) {
         addToSidebar(centerLat, centerLng, fri, style);
       }
 
-      L.popup({
-        autoPan: false,
-        closeButton: true
-      })
-      .setLatLng([centerLat, centerLng])
-      .setContent(`
-        <div style="font-family:monospace;font-size:13px;line-height:1.7">
-          <b>🔥 Fire Risk: ${data.alert_level}</b><br>
-          FRI: ${fri.toFixed(2)}<br>
-          ⚙️ Action: ${style.action}<br>
-          🌡️ Temp: ${data.temp}°C<br>
-          💨 Wind: ${data.wind_speed} km/h
-        </div>
-      `)
-      .openOn(map);
+      L.popup({ autoPan: false, closeButton: true })
+        .setLatLng([centerLat, centerLng])
+        .setContent(`
+          <div style="font-family:monospace;font-size:13px;line-height:1.7">
+            <b>🔥 Fire Risk: ${data.alert_level}</b><br>
+            🪨 Terrain: ${data.land_cover}<br>
+            #️⃣ FRI: ${fri.toFixed(2)}<br>
+            ⚙️ Action: ${style.action}<br>
+            🌡️ Temp: ${data.temp} C<br>
+            🌬️ Wind: ${data.wind_speed} km/h
+          </div>
+        `)
+        .openOn(map);
     } else {
-      rect.setStyle({ color: "#ff0000", fillOpacity: 0.3 }); 
+      rect.setStyle({ color: "#ff0000", fillOpacity: 0.3 });
       alert("Backend unreachable");
     }
   });
@@ -247,14 +307,7 @@ function rebuildSidebar() {
   var list = document.getElementById('zone-list');
   list.innerHTML = '';
   dangerousZones.forEach(function(z) {
-    var card = document.createElement('div');
-    card.className = 'zone-card';
-    card.style.borderColor = z.style.color;
-    card.innerHTML =
-      '<span class="zone-label" style="color:' + z.style.color + '">' + z.style.label + '</span><br>' +
-      'FRI: ' + z.fri.toFixed(1) + '<br>' +
-      '🌍 ' + z.lat.toFixed(5) + ', ' + z.lng.toFixed(5) + '<br>' +
-      '⚙️ ' + z.style.action;
+    var card = createCardElement(z.lat, z.lng, z.fri, z.style);
     list.appendChild(card);
   });
   document.getElementById('sidebar-empty').style.display =
@@ -262,10 +315,6 @@ function rebuildSidebar() {
 }
 
 drawGrid();
-
-map.on('moveend', function() {
-  drawGrid();
-});
 
 let isFlying = false;
 
@@ -275,11 +324,16 @@ document.getElementById('go-btn').onclick = function (e) {
   const lng = parseFloat(document.getElementById('lng-input').value);
 
   if (isNaN(lat) || isNaN(lng)) return;
-
-  isFlying = true; 
-  focusGrid = { lat, lng, size: FINEST_SIZE };
-
-  map.flyTo([lat, lng], 12, { animate: true, duration: 1.5 });
+  if ((lat < 90) && (lat > -90) && (lng < 180) && (lng > -180) ) {
+    isFlying = true; 
+    focusGrid = { lat, lng, size: FINEST_SIZE };
+  
+    map.flyTo([lat, lng], 12, { animate: true, duration: 1.5 });
+  } else {
+    alert("Invalid longtitude / latitude")
+    document.getElementById('lat-input').value = '';
+    document.getElementById('lng-input').value = '';
+  }
 };
 
 map.on('moveend', function() {

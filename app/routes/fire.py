@@ -1,3 +1,8 @@
+import sys
+import os
+import requests
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from fastapi import APIRouter
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
@@ -24,6 +29,15 @@ templates = Jinja2Templates(directory="app/templates")
 #     url = request.url_for("/map")
 #     return Request.RedirectResponse(url="/map")
 
+from app.database.crud.danger_zones import get_cached_danger_zones
+from app.services.land_cover_api import get_land_cover
+from app.services.grid_sampler import assess_grid_fire_risk
+from app.core.logger import logger
+from app.services.risk_scorer import calculate_fire_risk
+
+router = APIRouter()
+templates = Jinja2Templates(directory="app/templates")
+
 # returns main page with map
 # awaits get request
 @router.get("/map")
@@ -39,11 +53,20 @@ def get_fire(request: Request):
 def get_fire_data(lat: float, lon: float, background_tasks: BackgroundTasks):
     logger.info(f"Request received — lat: {lat}, lon: {lon}")
 
-    # TASK 2: check if fresh data exists in database (< 1 minute old)
+    land_cover = get_land_cover(lat, lon)
+    if not land_cover["relevant"]:
+        return {
+            "is_relevant": False,
+            "land_cover": land_cover["land_cover_name"],
+            "reason": land_cover["reason"]
+        }
+
     cached = get_recent_data(lat, lon)
     if cached:
         logger.info(f"Cache hit — returning data from {cached['computed_at']}")
         return {
+            "is_relevant": True,
+            "land_cover": land_cover["land_cover_name"],
             "temp": cached["temp"],
             "wind_speed": cached["wind_speed"],
             "risk_index": cached["risk_index"],
@@ -70,20 +93,31 @@ def get_fire_data(lat: float, lon: float, background_tasks: BackgroundTasks):
     data["zone_id"] = zone_id
     # insertion of weather reading
     create_weather_reading(data)
+    logger.info("Cache miss — sampling 9 sub-locations in grid")
+    grid_result = assess_grid_fire_risk(lat, lon)
+    center = grid_result["center_weather"]
+
+    zone_id = grid_result["zone_id"]  # already created inside assess_grid_fire_risk
+    logger.info(f"Grid zone — zone_id: {zone_id}")
+
+    center["zone_id"] = zone_id
+    center["ffmc"] = grid_result.get("ffmc")
+    center["dmc"]  = grid_result.get("dmc")
+    center["dc"]   = grid_result.get("dc")
+    create_weather_reading(center)
     logger.info(f"Weather reading inserted for zone_id: {zone_id}")
 
-    # TASK 1: insert fire_risk_score and alert_event every time we get weather data
-    risk_result = insert_risk_and_alert(zone_id, risk["risk_index"])
+    risk_result = insert_risk_and_alert(zone_id, grid_result["risk_index"])
     logger.info(f"Risk score inserted — score_id: {risk_result['score_id']}, alert: {risk_result['alert_level']}")
 
-    # returning JSON format with given variables
     return {
-        "temp" : round(float(data["temperature_2m"]), 2),
-        "wind_speed" : round(float(data["wind_speed_10m"]),2),
-        "risk_index": risk["risk_index"],
-        "alert_level": risk["alert_level"]
+        "is_relevant": True,
+        "land_cover": land_cover["land_cover_name"],
+        "temp": grid_result["temp"],
+        "wind_speed": grid_result["wind_speed"],
+        "risk_index": grid_result["risk_index"],
+        "alert_level": grid_result["alert_level"]
     }
-
 
 @router.get("/fire/dangerZones")
 def get_danger_zones():

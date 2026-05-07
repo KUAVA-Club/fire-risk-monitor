@@ -118,7 +118,7 @@ def get_alert_level(fwi: float, zone_id: str) -> str:
 
 def calculate_fire_risk(zone_id: str,temperature, wind_speed, humidity, precipitation, soil_moisture, lon: float = 0.0) -> dict:
     month = datetime.now().month
-    moisture_state = get_moisture_state(zone_id)  
+    moisture_state = get_moisture_state(zone_id)
     fwi, ffmc, dmc, dc = calculate_fwi_from_weather(temperature, humidity, wind_speed, precipitation, month,
                                                     ffmc_prev=moisture_state["ffmc_prev"],
                                                     dmc_prev=moisture_state["dmc_prev"],
@@ -130,6 +130,9 @@ def calculate_fire_risk(zone_id: str,temperature, wind_speed, humidity, precipit
     level = get_alert_level(fwi, zone_id)
     return {
         "risk_index": fri,
-        "alert_level": level
+        "alert_level": level,
+        "ffmc": ffmc,
+        "dmc": dmc,
+        "dc": dc,
     }
 
