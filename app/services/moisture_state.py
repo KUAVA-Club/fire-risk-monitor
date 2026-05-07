@@ -1,5 +1,6 @@
 from app.database.db import get_connection
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+
 
 def get_moisture_state(zone_id: str) -> dict:
     """Fetch previous moisture codes for a zone, or return startup defaults."""
@@ -19,10 +20,28 @@ def get_moisture_state(zone_id: str) -> dict:
     return {"ffmc_prev": 85.0, "dmc_prev": 6.0, "dc_prev": 15.0}
 
 
-def save_moisture_state(zone_id: str, ffmc: float, dmc: float, dc: float):
+def save_moisture_state(zone_id: str, ffmc: float, dmc: float, dc: float, lon: float = 0.0):
     """Upsert today's computed codes as tomorrow's previous values."""
     conn = get_connection()
     cursor = conn.cursor()
+
+    offset_hours = round(lon / 15)
+    local_tz = timezone(timedelta(hours=offset_hours))
+    local_today = datetime.now(local_tz).date()
+
+    cursor.execute(
+        "SELECT updated_at FROM moisture_state WHERE zone_id = ?",
+        (zone_id,)
+    )
+    row = cursor.fetchone()
+
+    if row:
+        updated_at = datetime.fromisoformat(row[0]).replace(tzinfo=timezone.utc)
+        updated_local_date = updated_at.astimezone(local_tz).date()
+        if updated_local_date == local_today:
+            conn.close()
+            return  # already updated today in local time
+        
     cursor.execute("""
         INSERT INTO moisture_state (zone_id, ffmc_prev, dmc_prev, dc_prev, updated_at)
         VALUES (?, ?, ?, ?, ?)
