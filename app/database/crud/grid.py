@@ -1,5 +1,5 @@
 import uuid
-from database.db import get_connection
+from app.database.db import get_connection
 
 GRID_SIZE = 0.05
 

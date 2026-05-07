@@ -1,7 +1,7 @@
 import uuid
-from database.db import get_connection
-from services.most_dangerous_zones import get_top_5_danger_zones
-from core.logger import logger
+from app.database.db import get_connection
+from app.services.most_dangerous_zones import get_top_5_danger_zones
+from app.core.logger import logger
 
 CACHE_TTL_MINUTES = 15
 

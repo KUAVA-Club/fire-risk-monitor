@@ -1,5 +1,5 @@
 import uuid
-from database.db import get_connection
+from app.database.db import get_connection
 
 
 def create_weather_reading(data: dict) -> str:
