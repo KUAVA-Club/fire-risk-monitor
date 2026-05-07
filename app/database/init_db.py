@@ -97,6 +97,16 @@ def init_database():
         CREATE INDEX IF NOT EXISTS idx_danger_zone_cache_alert
             ON danger_zone_cache(alert_level);
                          
+        CREATE TABLE IF NOT EXISTS fwi_percentiles (
+            zone_id     TEXT PRIMARY KEY,
+            p75         REAL NOT NULL,
+            p90         REAL NOT NULL,
+            p95         REAL NOT NULL,
+            p99         REAL NOT NULL,
+            computed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (zone_id) REFERENCES grid_zone(id)
+        );
+                         
     """)
 
     conn.commit()
