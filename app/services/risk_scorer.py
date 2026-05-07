@@ -1,6 +1,8 @@
 import math
 from datetime import datetime
 from .moisture_state import get_moisture_state, save_moisture_state
+from app.database.crud.percentiles import get_fwi_percentiles
+
 
 def compute_ffmc(temp: float, rh: float, wind: float, rain: float, ffmc_prev: float = 85.0) -> float:
     mo = 147.2 * (101 - ffmc_prev) / (59.5 + ffmc_prev)
@@ -96,15 +98,25 @@ def compute_fri(fwi_raw: float, ndvi: float) -> float:
     vegetation_score = (1 - ndvi) / 2 * 100
     return round(fwi_score * 0.65 + vegetation_score * 0.35, 2)
 
-def get_alert_level(fri: float) -> str:
-    if fri < 25: return "LOW"
-    if fri < 50: return "MODERATE"
-    if fri < 70: return "HIGH"
-    if fri < 85: return "VERY_HIGH"
+def get_alert_level(fwi: float, zone_id: str) -> str:
+    percentiles = get_fwi_percentiles(zone_id)
+    
+    if percentiles is None:
+        # Canadian Forest Service standard fallback until percentiles are computed
+        if fwi < 8:  return "LOW"
+        if fwi < 17: return "MODERATE"
+        if fwi < 32: return "HIGH"
+        if fwi < 49: return "VERY_HIGH"
+        return "EXTREME"
+
+    if fwi < percentiles["p75"]: return "LOW"
+    if fwi < percentiles["p90"]: return "MODERATE"
+    if fwi < percentiles["p95"]: return "HIGH"
+    if fwi < percentiles["p99"]: return "VERY_HIGH"
     return "EXTREME"
 
 
-def calculate_fire_risk(zone_id: str,temperature, wind_speed, humidity, precipitation, soil_moisture) -> dict:
+def calculate_fire_risk(zone_id: str,temperature, wind_speed, humidity, precipitation, soil_moisture, lon: float = 0.0) -> dict:
     month = datetime.now().month
     moisture_state = get_moisture_state(zone_id)  
     fwi, ffmc, dmc, dc = calculate_fwi_from_weather(temperature, humidity, wind_speed, precipitation, month,
@@ -115,7 +127,7 @@ def calculate_fire_risk(zone_id: str,temperature, wind_speed, humidity, precipit
     save_moisture_state(zone_id, ffmc, dmc, dc)
     ndvi = 1 - (soil_moisture * 2)  # TODO: replace with actual NDVI from API
     fri = compute_fri(fwi, ndvi)
-    level = get_alert_level(fri)
+    level = get_alert_level(fwi, zone_id)
     return {
         "risk_index": fri,
         "alert_level": level
