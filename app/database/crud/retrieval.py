@@ -26,8 +26,8 @@ def get_recent_data(lat: float, lon: float) -> dict | None:
            JOIN weather_reading w ON w.zone_id = g.id
            JOIN fire_risk_score f ON f.zone_id = g.id
            WHERE g.lat_min = ? AND g.lon_min = ?
-             AND w.recorded_at > datetime('now', '-1 minute')
-             AND f.computed_at > datetime('now', '-1 minute')
+             AND w.recorded_at > datetime('now', '-1 hour')
+             AND f.computed_at > datetime('now', '-1 hour')
            ORDER BY f.computed_at DESC
            LIMIT 1""",
         (lat_min, lon_min)

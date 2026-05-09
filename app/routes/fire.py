@@ -6,10 +6,28 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from fastapi import APIRouter
 from fastapi.templating import Jinja2Templates
 from fastapi import Request
+from app.services.open_meteo_api import getData
 from app.database.crud.weather import create_weather_reading
 from app.database.crud.grid import create_grid_zone
 from app.database.crud.risk import insert_risk_and_alert
 from app.database.crud.retrieval import get_recent_data
+
+from app.database.crud.danger_zones import get_cached_danger_zones
+from app.core.logger import logger  
+from app.services.risk_scorer import calculate_fire_risk
+
+from fastapi import BackgroundTasks
+from app.services.percentile_computer import compute_and_store_percentiles
+from app.database.crud.percentiles import get_fwi_percentiles
+
+
+router = APIRouter()
+templates = Jinja2Templates(directory="app/templates")
+
+# @router.get("/")
+# def redirctionFromRoot(request: Request):
+#     url = request.url_for("/map")
+#     return Request.RedirectResponse(url="/map")
 
 from app.database.crud.danger_zones import get_cached_danger_zones
 from app.services.land_cover_api import get_land_cover
@@ -32,7 +50,7 @@ def get_fire(request: Request):
 # returns data based on location
 # used in js when clicked on grid to fetch data from API
 @router.get("/fire/data")
-def get_fire_data(lat: float, lon: float):
+def get_fire_data(lat: float, lon: float, background_tasks: BackgroundTasks):
     logger.info(f"Request received — lat: {lat}, lon: {lon}")
 
     land_cover = get_land_cover(lat, lon)
@@ -55,6 +73,26 @@ def get_fire_data(lat: float, lon: float):
             "alert_level": cached["alert_level"]
         }
 
+    logger.info("Cache miss — fetching from API")
+    # Fetch weather data from API
+    data = getData(lat, lon)
+    logger.info(f"API data retrieved — temp: {data['temperature_2m']}, wind: {data['wind_speed_10m']}")
+    
+    # insertion of accessed zone to the grid_zone table
+    zone_id = create_grid_zone(data)
+    logger.info(f"Grid zone inserted — zone_id: {zone_id}")
+
+    # trigger background percentile computation if not yet done for this zone
+    if get_fwi_percentiles(zone_id) is None:
+        background_tasks.add_task(compute_and_store_percentiles, zone_id)
+
+    # calculate risk
+    risk = calculate_fire_risk(zone_id, float(data["temperature_2m"]), float(data["wind_speed_10m"]), float(data["relative_humidity_2m"]), float(data["precipitation_sum"]), float(data["soil_moisture_0_to_1cm"]), lon=lon)
+
+    # adding zone_id for Foreign Key in weather_readings table
+    data["zone_id"] = zone_id
+    # insertion of weather reading
+    create_weather_reading(data)
     logger.info("Cache miss — sampling 9 sub-locations in grid")
     grid_result = assess_grid_fire_risk(lat, lon)
     center = grid_result["center_weather"]
