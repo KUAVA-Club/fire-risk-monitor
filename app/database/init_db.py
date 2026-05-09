@@ -101,6 +101,14 @@ def init_database():
             computed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (zone_id) REFERENCES grid_zone(id)
         );
+
+        CREATE TABLE IF NOT EXISTS moisture_state (
+            zone_id     TEXT PRIMARY KEY,
+            ffmc_prev   REAL NOT NULL,
+            dmc_prev    REAL NOT NULL,
+            dc_prev     REAL NOT NULL,
+            updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
                          
     """)
 

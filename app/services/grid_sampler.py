@@ -126,7 +126,7 @@ def compute_grid_fri(sub_results: list[dict], zone_id: str) -> dict:
     composite_fri = round(ALPHA * max_fri + (1 - ALPHA) * weighted_avg, 2)
     avg_wind = round(sum(wind_speeds) / n, 2)
     avg_temp = round(sum(temps) / n, 2)
-    alert_level = get_alert_level(composite_fri)
+    alert_level = get_alert_level(composite_fri, zone_id)
 
     logger.info(
         f"Grid FRI: {composite_fri} (max={max_fri:.2f}, avg={weighted_avg:.2f}, "
