@@ -23,6 +23,13 @@ const BASEMAPS = {
       maxZoom: 19,
     }),
   ],
+  light: () => [
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap &copy; CARTO',
+      subdomains: 'abcd',
+      maxZoom: 19,
+    }),
+  ],
   satellite: () => [
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics',
@@ -76,11 +83,16 @@ function baseHexStyle() {
   if (state.basemap === 'satellite') {
     return { color: '#ffffff', weight: 1, fillColor: '#ffffff', fillOpacity: 0.05 };
   }
+  if (state.basemap === 'light') {
+    return { color: '#a0a0a0', weight: 1, fillColor: '#000000', fillOpacity: 0.04 };
+  }
   return { color: '#3a3f55', weight: 1, fillColor: '#1f2333', fillOpacity: 0.08 };
 }
 
 function hoverHexOpacity() {
-  return state.basemap === 'satellite' ? 0.15 : 0.18;
+  if (state.basemap === 'satellite') return 0.15;
+  if (state.basemap === 'light') return 0.12; 
+  return 0.18;
 }
 
 function viewportPolygon() {

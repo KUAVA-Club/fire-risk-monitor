@@ -250,7 +250,7 @@ body.detail-open .rail-right {
 }
 .toggle input:checked ~ .toggle-label { color: var(--text); }
 
-/* === segmented === */
+/* === fented === */
 .seg {
   display: flex;
   background: var(--panel-2);
@@ -708,3 +708,51 @@ body.detail-open .rail-right {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--dim); }
+
+/* === Light Mode Variable Overrides === */
+body[data-basemap="light"] {
+  --bg:         #f0f2f5;      
+  --panel:      #ffffff;      
+  --panel-2:    #f8f9fa;      
+  --border:     #dcdfe8;      
+  --text:       #1a1c23;      
+  --muted:      #5c6378;      
+  --dim:        #a0a7ba;      
+}
+
+body[data-basemap="light"] .rail {
+  box-shadow: 0 0 20px rgba(0,0,0,0.05);
+}
+
+body[data-basemap="light"] .status-pill,
+body[data-basemap="light"] #legend {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: #ced4da;
+  color: #1a1c23;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+body[data-basemap="light"] .status-pill #status-text,
+body[data-basemap="light"] .legend-row {
+  color: #1a1c23;
+}
+
+body[data-basemap="light"] .leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.8) !important;
+  color: #666 !important;
+}
+
+body[data-basemap="light"] .zone-card {
+  background: #ffffff;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+
+body[data-basemap="light"] .zone-card:hover {
+  background: #fdfdfd;
+}
+
+body[data-basemap="light"] .leaflet-popup-content-wrapper {
+  background: #ffffff;
+  color: #1a1c23;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
