@@ -30,6 +30,7 @@ templates = Jinja2Templates(directory="app/templates")
 #     return Request.RedirectResponse(url="/map")
 
 from app.database.crud.danger_zones import get_cached_danger_zones
+from app.database.crud.alerts import get_recent_alerts
 from app.services.land_cover_api import get_land_cover
 from app.services.grid_sampler import assess_grid_fire_risk
 from app.core.logger import logger
@@ -123,3 +124,10 @@ def get_fire_data(lat: float, lon: float, background_tasks: BackgroundTasks):
 def get_danger_zones():
     data = get_cached_danger_zones()
     return data
+
+
+@router.get("/fire/alerts")
+def get_alerts(since: str = "24h"):
+    if since not in {"1h", "24h", "7d"}:
+        since = "24h"
+    return get_recent_alerts(since)
