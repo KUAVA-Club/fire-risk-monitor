@@ -10,8 +10,8 @@ export async function fetchDangerZones() {
   return r.json();
 }
 
-export async function fetchAlerts(since = '24h') {
-  const r = await fetch(`/fire/alerts?since=${encodeURIComponent(since)}`);
+export async function fetchAlerts() {
+  const r = await fetch(`/fire/alerts?since=1h`);
   if (!r.ok) throw new Error(`fire/alerts failed: ${r.status}`);
   return r.json();
 }

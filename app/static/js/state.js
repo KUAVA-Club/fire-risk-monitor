@@ -3,7 +3,6 @@ const DEFAULTS = {
   lon: 0,
   zoom: 2,
   layers: ['risk', 'alerts'],
-  since: '24h',
   basemap: 'dark',
 };
 
@@ -26,7 +25,6 @@ function readFromUrl() {
     lon:     clampNum(p.get('lon'),  DEFAULTS.lon),
     zoom:    clampNum(p.get('zoom'), DEFAULTS.zoom),
     layers:  parseLayers(p.get('layers')),
-    since:   p.get('since')   || DEFAULTS.since,
     basemap: p.get('basemap') || DEFAULTS.basemap,
   };
 }
@@ -42,7 +40,6 @@ function scheduleWrite() {
     p.set('lon',     state.lon.toFixed(4));
     p.set('zoom',    state.zoom.toFixed(2));
     p.set('layers',  state.layers.join(','));
-    p.set('since',   state.since);
     p.set('basemap', state.basemap);
     history.replaceState(null, '', '?' + p.toString());
   }, 250);

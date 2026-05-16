@@ -1,9 +1,11 @@
+const FRM_VERSION = 'v6';
+console.log(`%c[FRM ${FRM_VERSION}] frontend loaded`, 'color:#ff6b35;font-weight:600');
+
 import { drawHexGrid } from './map.js';
 import { initLayers, refreshAlerts } from './layers.js';
 import {
   buildLegend,
   wireLayerToggles,
-  wireTimeRange,
   wireBasemap,
   wireSearch,
   wireDetail,
@@ -15,7 +17,6 @@ function boot() {
   buildLegend();
   wireBasemap();
   wireLayerToggles();
-  wireTimeRange();
   wireSearch();
   wireDetail();
   initLayers();

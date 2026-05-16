@@ -1,8 +1,12 @@
+// Thresholds follow the Canadian Forest Service FWI scale used by the
+// backend's CFS fallback. The backend's percentile-based path is
+// non-deterministic across calls, so the frontend stays the single
+// source of truth for color → FRI mapping.
 export const RISK_LEVELS = [
-  { min: 85, color: '#8B0000', label: 'EXTREME',    action: 'All channels + evacuation readiness' },
-  { min: 70, color: '#ff4d4f', label: 'VERY HIGH',  action: 'SMS + dispatch prep' },
-  { min: 50, color: '#ff6b35', label: 'HIGH',       action: 'Immediate email alert' },
-  { min: 25, color: '#ffd166', label: 'MODERATE',   action: 'Daily digest + forecast review' },
+  { min: 49, color: '#8B0000', label: 'EXTREME',    action: 'All channels + evacuation readiness' },
+  { min: 32, color: '#ff4d4f', label: 'VERY HIGH',  action: 'SMS + dispatch prep' },
+  { min: 17, color: '#ff6b35', label: 'HIGH',       action: 'Immediate email alert' },
+  { min: 8,  color: '#ffd166', label: 'MODERATE',   action: 'Daily digest + forecast review' },
   { min: 0,  color: '#4ade80', label: 'LOW',        action: 'Log only (review EOD)' },
 ];
 
@@ -32,8 +36,11 @@ export function getRiskStyle(fri) {
   return { ...found };
 }
 
-export function styleFromBackend(data, fri) {
-  return styleForLevel(data?.alert_level) || getRiskStyle(fri);
+export function styleFromBackend(_data, fri) {
+  // Intentionally ignore backend's alert_level — it drifts between
+  // CFS-fallback and percentile thresholds on repeated calls for the
+  // same point. FRI → color is deterministic on the frontend.
+  return getRiskStyle(fri);
 }
 
 export function alertCssClass(level) {

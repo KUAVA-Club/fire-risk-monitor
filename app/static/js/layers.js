@@ -1,5 +1,5 @@
 import { map, riskLayer, landcoverLayer, alertsLayer } from './map.js';
-import { state, hasLayer, onChange } from './state.js';
+import { hasLayer, onChange } from './state.js';
 import { fetchAlerts } from './api.js';
 import { alertCssClass } from './risk.js';
 
@@ -26,7 +26,7 @@ export async function refreshAlerts() {
   const myKey = ++alertsAbortKey;
   let alerts = [];
   try {
-    alerts = await fetchAlerts(state.since);
+    alerts = await fetchAlerts();
   } catch (e) {
     console.error('alerts fetch failed', e);
     return [];
@@ -59,7 +59,6 @@ export function initLayers() {
   syncLayerVisibility();
   onChange((_, patch) => {
     if (patch.layers) syncLayerVisibility();
-    if (patch.since)  refreshAlerts();
   });
 }
 

@@ -485,6 +485,33 @@ body.detail-open .rail-right {
   padding: 12px 14px;
   min-width: 160px;
 }
+
+.grid-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(20, 22, 31, 0.85);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-size: 13px;
+  color: var(--muted);
+  pointer-events: none;
+  user-select: none;
+  letter-spacing: .01em;
+}
+.grid-hint[hidden] { display: none; }
+.grid-hint-icon {
+  color: var(--accent);
+  font-size: 16px;
+  font-weight: 700;
+}
 .legend-title {
   font-size: 11px;
   color: var(--muted);

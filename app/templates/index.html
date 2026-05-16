@@ -58,15 +58,6 @@
       </label>
     </section>
 
-    <section class="panel">
-      <div class="panel-title">Time Range</div>
-      <div class="seg" id="time-range">
-        <button class="seg-btn" data-since="1h">1h</button>
-        <button class="seg-btn active" data-since="24h">24h</button>
-        <button class="seg-btn" data-since="7d">7d</button>
-      </div>
-    </section>
-
     <section class="panel panel-grow">
       <div class="panel-title">
         Zones
@@ -93,6 +84,11 @@
     <div id="legend">
       <div class="legend-title">Fire Risk Index</div>
       <div class="legend-rows" id="legend-rows"></div>
+    </div>
+
+    <div id="grid-hint" class="grid-hint" hidden>
+      <span class="grid-hint-icon">⊕</span>
+      <span>Zoom in to view the fire-risk grid</span>
     </div>
   </main>
 
@@ -141,6 +137,6 @@
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/h3-js@4.1.0/dist/h3-js.umd.js"></script>
-  <script type="module" src="/static/js/main.js"></script>
+  <script type="module" src="/static/js/main.js?v=6"></script>
 </body>
 </html>

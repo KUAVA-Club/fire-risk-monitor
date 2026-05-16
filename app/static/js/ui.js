@@ -8,7 +8,7 @@ function sortGridsBySeverity(grids) {
     return (b.fri ?? -Infinity) - (a.fri ?? -Infinity);
   });
 }
-import { map, flyTo, onCellSelected, clearSelections, haversineKm, setBasemap } from './map.js';
+import { map, flyTo, onCellSelected, clearSelections, haversineKm, setBasemap, cacheFireData } from './map.js';
 import { refreshAlerts } from './layers.js';
 import { fetchFireData } from './api.js';
 import { toast } from './toast.js';
@@ -36,18 +36,6 @@ export function wireLayerToggles() {
     cb.checked = state.layers.includes(cb.dataset.layer);
     cb.addEventListener('change', () => {
       toggleLayer(cb.dataset.layer, cb.checked);
-    });
-  });
-}
-
-export function wireTimeRange() {
-  const wrap = $('time-range');
-  wrap.querySelectorAll('.seg-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.since === state.since);
-    b.addEventListener('click', () => {
-      wrap.querySelectorAll('.seg-btn').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      update({ since: b.dataset.since });
     });
   });
 }
@@ -283,6 +271,7 @@ async function scanZone(zone) {
           const fri = data.risk_index;
           const style = styleFromBackend(data, fri);
           zone.grids.push({ key: c.idx, lat: c.lat, lon: c.lon, fri, data, style });
+          cacheFireData(c.lat, c.lon, { data, fri });
           sortGridsBySeverity(zone.grids);
         }
       } catch (e) {
@@ -392,7 +381,8 @@ export function clearAllZones() {
 }
 
 export function openDetail({ lat, lon, data, fri, style }) {
-  const resolved = styleFromBackend(data, fri) || style;
+  const notApplicable = data?.is_relevant === false;
+  const resolved = notApplicable ? style : (styleFromBackend(data, fri) || style);
   const color = resolved?.color ?? '';
   const label = resolved?.label ?? '—';
 

@@ -65,19 +65,107 @@ const cellListeners = new Set();
 export function onCellSelected(fn) { cellListeners.add(fn); }
 function emitSelected(payload) { cellListeners.forEach(fn => fn(payload)); }
 
-// Backend grid cell is 0.05° ≈ 5.5km × 5.5km (≈ 30 km²) at the equator.
-// H3 res 6 ≈ 3.2km edge / 36 km² area — the closest match without
-// going so small that multiple hexes collapse onto one backend cell.
-export function resolutionForZoom(zoom) {
-  if (zoom <= 2)  return 1;
-  if (zoom <= 4)  return 2;
-  if (zoom <= 6)  return 3;
-  if (zoom <= 8)  return 4;
-  if (zoom <= 10) return 5;
-  return 6;
+// Terrain classification: two parallel checks decide whether a point
+// is fire-relevant.
+//
+//   - Open-Meteo elevation: returns exactly 0 over ocean / sea (their
+//     DEM has no data there). Reliable water detector.
+//   - Overpass `around:150` building count + landuse polygons:
+//     reliable urban detector. Empty forest / wilderness returns 0.
+//
+// Both are cached aggressively. The backend's MODIS land-cover API
+// times out for nearly every request so the frontend has to be the
+// authoritative source for "is this point fire-relevant?".
+const terrainCache = new Map();
+
+async function fetchElevation(lat, lon) {
+  try {
+    const r = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`);
+    if (!r.ok) return null;
+    const j = await r.json();
+    return Array.isArray(j.elevation) ? j.elevation[0] : null;
+  } catch (e) { return null; }
 }
 
-const MAX_CELLS_RENDERED = 2000;
+async function fetchUrbanScore(lat, lon) {
+  const query = `[out:json][timeout:6];(`
+    + `way["building"](around:150,${lat},${lon});`
+    + `way["landuse"~"^(residential|commercial|industrial|retail)$"](around:300,${lat},${lon});`
+    + `);out tags;`;
+  try {
+    const r = await fetch('https://overpass-api.de/api/interpreter', {
+      method: 'POST',
+      body: 'data=' + encodeURIComponent(query),
+    });
+    if (!r.ok) return { buildings: 0, urbanLanduse: 0 };
+    const j = await r.json();
+    let buildings = 0, urbanLanduse = 0;
+    for (const el of j.elements || []) {
+      const t = el.tags || {};
+      if (t.building) buildings++;
+      if (['residential','commercial','industrial','retail'].includes(t.landuse)) urbanLanduse++;
+    }
+    return { buildings, urbanLanduse };
+  } catch (e) {
+    return { buildings: 0, urbanLanduse: 0 };
+  }
+}
+
+async function classifyTerrain(lat, lon) {
+  const key = `${lat.toFixed(2)},${lon.toFixed(2)}`;
+  if (terrainCache.has(key)) return terrainCache.get(key);
+
+  const [elev, urban] = await Promise.all([
+    fetchElevation(lat, lon),
+    fetchUrbanScore(lat, lon),
+  ]);
+
+  let result;
+  if (elev === 0) {
+    result = { relevant: false, reason: 'Water body — not fire-relevant' };
+  } else if (urban.buildings >= 5 || urban.urbanLanduse >= 1) {
+    result = { relevant: false, reason: 'Urban / built-up area — not fire-relevant' };
+  } else {
+    result = { relevant: true };
+  }
+  terrainCache.set(key, result);
+  return result;
+}
+
+// Shared cache so a zone scan's results can be reused when the user
+// clicks a nearby hex. Without this, scan and click hit different
+// lat/lon → backend returns different FRI → different color.
+const fireDataCache = new Map();
+
+export function cacheFireData(lat, lon, payload) {
+  const key = `${lat.toFixed(3)},${lon.toFixed(3)}`;
+  fireDataCache.set(key, { lat, lon, ...payload, ts: Date.now() });
+}
+
+function findCachedFireData(lat, lon, withinKm = 12) {
+  let best = null, bestDist = withinKm;
+  const now = Date.now();
+  for (const v of fireDataCache.values()) {
+    if (now - v.ts > 60 * 60 * 1000) continue;
+    const d = haversineKm({ lat: v.lat, lon: v.lon }, { lat, lon });
+    if (d < bestDist) { best = v; bestDist = d; }
+  }
+  return best;
+}
+
+// Hex sizing matches Open-Meteo's weather grid (~9–25 km), which is
+// the coarsest input to FRI. Sampling smaller than ~9 km re-queries
+// the same underlying weather cell, so H3 res 6 (~9 km diameter) is
+// the right size everywhere.
+export const MIN_ZOOM_FOR_GRID = 7;
+
+export function resolutionForZoom(zoom) {
+  if (zoom < MIN_ZOOM_FOR_GRID) return null;
+  if (zoom <= 11) return 6;   // ~9 km diameter — matches data resolution
+  return 7;                    // close-up: ~3 km
+}
+
+const MAX_CELLS_RENDERED = 5000;
 
 function baseHexStyle() {
   if (state.basemap === 'satellite') {
@@ -97,21 +185,44 @@ function hoverHexOpacity() {
 
 function viewportPolygon() {
   const b = map.getBounds();
-  const n = b.getNorth(), s = b.getSouth();
-  const w = Math.max(b.getWest(), -179.9);
-  const e = Math.min(b.getEast(),  179.9);
+  const n = Math.min(b.getNorth(),  75);
+  const s = Math.max(b.getSouth(), -65);
+  const w = Math.max(b.getWest(),  -179.9);
+  const e = Math.min(b.getEast(),   179.9);
   return [[
     [n, w], [n, e], [s, e], [s, w], [n, w],
   ]];
 }
 
+function boundaryWrapsAntimeridian(boundary) {
+  for (let i = 1; i < boundary.length; i++) {
+    if (Math.abs(boundary[i][1] - boundary[i - 1][1]) > 180) return true;
+  }
+  return false;
+}
+
+function setGridHint(visible) {
+  const el = document.getElementById('grid-hint');
+  if (!el) return;
+  el.hidden = !visible;
+}
+
 export function drawHexGrid() {
-  if (!state.layers.includes('risk') && !state.layers.includes('landcover')) {
+  const riskOn = state.layers.includes('risk');
+  if (!riskOn && !state.layers.includes('landcover')) {
     riskLayer.clearLayers();
     hexCells.clear();
+    setGridHint(false);
     return;
   }
   const res = resolutionForZoom(map.getZoom());
+  if (res == null) {
+    riskLayer.clearLayers();
+    hexCells.clear();
+    setGridHint(riskOn);
+    return;
+  }
+  setGridHint(false);
   let cells;
   try {
     cells = h3.polygonToCells(viewportPolygon(), res);
@@ -129,12 +240,13 @@ export function drawHexGrid() {
   const baseStyle = baseHexStyle();
   cells.forEach(idx => {
     const boundary = h3.cellToBoundary(idx);
+    if (boundaryWrapsAntimeridian(boundary)) return;
     const saved = clickedCells.get(idx);
     const poly = L.polygon(boundary, {
       color:       saved ? saved.style.color : baseStyle.color,
-      weight:      1,
+      weight:      saved ? 1.5 : 1,
       fillColor:   saved ? saved.style.color : baseStyle.fillColor,
-      fillOpacity: saved ? 0.5 : baseStyle.fillOpacity,
+      fillOpacity: saved ? 0.65 : baseStyle.fillOpacity,
       className: 'hex-cell',
       smoothFactor: 1.5,
     });
@@ -151,6 +263,12 @@ export function drawHexGrid() {
   });
 }
 
+const NOT_APPLICABLE_STYLE = {
+  color: '#6c757d',
+  label: 'NOT APPLICABLE',
+  action: 'Fire monitoring disabled for this terrain.',
+};
+
 async function onHexClick(e) {
   L.DomEvent.stopPropagation(e);
   const poly = e.target;
@@ -166,23 +284,57 @@ async function onHexClick(e) {
 
   poly.setStyle({ color: '#ffb347', fillColor: '#ffb347', fillOpacity: 0.4 });
 
+  // Re-use a nearby cached scan/click result if we have one — this is
+  // what makes a hex labelled MODERATE in the zone list still look
+  // MODERATE when clicked on the map. Without it the click hits the
+  // backend at a slightly different lat/lon → different FRI → drift.
+  const cached = findCachedFireData(lat, lon);
+  if (cached) {
+    const fri = cached.fri;
+    const style = styleFromBackend(cached.data, fri);
+    clickedCells.set(idx, { style, data: cached.data, fri });
+    poly.setStyle({ color: style.color, fillColor: style.color, fillOpacity: 0.65, weight: 1.5 });
+    emitSelected({ lat, lon, data: cached.data, fri, style, key: idx, isHex: true });
+    return;
+  }
+
+  const terrain = await classifyTerrain(lat, lon);
+  if (!terrain.relevant) {
+    const data = {
+      is_relevant: false,
+      land_cover: terrain.reason.split(' — ')[0],
+      temp: null,
+      wind_speed: null,
+    };
+    clickedCells.set(idx, { style: NOT_APPLICABLE_STYLE, data });
+    poly.setStyle(baseHexStyle());
+    toast(terrain.reason, 'info', 1800);
+    emitSelected({ lat, lon, data, style: NOT_APPLICABLE_STYLE, key: idx, isHex: true });
+    return;
+  }
+
   try {
     const data = await fetchFireData(lat, lon);
     if (data.is_relevant === false) {
-      const style = { color: '#6c757d', label: 'NOT APPLICABLE', action: 'Fire monitoring disabled for this terrain.' };
-      clickedCells.set(idx, { style, data });
-      poly.setStyle({ color: style.color, fillColor: style.color, fillOpacity: 0.4 });
-      emitSelected({ lat, lon, data, style, key: idx, isHex: true });
+      clickedCells.set(idx, { style: NOT_APPLICABLE_STYLE, data });
+      poly.setStyle(baseHexStyle());
+      emitSelected({ lat, lon, data, style: NOT_APPLICABLE_STYLE, key: idx, isHex: true });
       return;
     }
     const fri = data.risk_index;
     const style = styleFromBackend(data, fri);
     clickedCells.set(idx, { style, data, fri });
-    poly.setStyle({ color: style.color, fillColor: style.color, fillOpacity: 0.45 });
+    cacheFireData(lat, lon, { data, fri });
+    poly.setStyle({
+      color: style.color,
+      fillColor: style.color,
+      fillOpacity: 0.65,
+      weight: 1.5,
+    });
     emitSelected({ lat, lon, data, fri, style, key: idx, isHex: true });
   } catch (err) {
     console.error(err);
-    poly.setStyle({ color: '#ff4d4f', fillOpacity: 0.3 });
+    poly.setStyle(baseHexStyle());
     toast('Backend unreachable — try again', 'error');
     emitSelected({ error: 'Backend unreachable' });
   }
@@ -215,6 +367,19 @@ export function highlightHexAt(lat, lon) {
   const poly = hexCells.get(idx);
   if (poly) poly.fire('click');
 }
+
+// Wipe hexes the instant we drop below the visibility threshold, so
+// Leaflet's zoom animation never has stale polygons to stretch into
+// parallel lines across the world.
+function maybeClearForLowZoom() {
+  if (map.getZoom() < MIN_ZOOM_FOR_GRID && riskLayer.getLayers().length > 0) {
+    riskLayer.clearLayers();
+    hexCells.clear();
+  }
+}
+map.on('zoomstart', maybeClearForLowZoom);
+map.on('zoom',      maybeClearForLowZoom);
+map.on('zoomend',   maybeClearForLowZoom);
 
 map.on('moveend zoomend', () => {
   const c = map.getCenter();
