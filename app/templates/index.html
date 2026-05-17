@@ -1,28 +1,142 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Wildfire Monitoring Grid</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  <link rel="stylesheet" href="../static/css/style.css">
+  <title>Fire Risk Monitor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    
-  <div id="map"></div>
-  <div id="sidebar">
-    <h3>🔥 Dangerous Zones</h3>
-    <div id="sidebar-empty">Loading...</div>
-    <div id="zone-list"></div>
-  </div>
+  <aside id="rail-left" class="rail">
+    <header class="rail-header">
+      <div class="brand">
+        <span class="brand-mark">FRM</span>
+        <span class="brand-title">Fire Risk Monitor</span>
+      </div>
+      <div class="brand-sub">KUAVA · Teknofest 2026</div>
+    </header>
 
-  <div id="top-bar">
-    <input id="lat-input" type="number" step="any" placeholder="Latitude">
-    <input id="lng-input" type="number" step="any" placeholder="Longitude">
-    <button id="go-btn">Go</button>
-    <button id="reset-btn" style="background: #666;">Reset</button> 
-  </div>
-  
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="../static/js/script.js"></script>
+    <section class="panel">
+      <div class="panel-title">Search</div>
+      <div class="search-place">
+        <input id="place-input" type="text" placeholder='Place or "lat, lon"'>
+        <button id="place-btn" class="btn-icon" title="Search">⌕</button>
+        <button id="geo-btn" class="btn-icon" title="Use my location">📍</button>
+      </div>
+      <button id="reset-btn" class="btn btn-ghost" style="width:100%;">Reset</button>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">Basemap</div>
+      <div class="seg" id="basemap-toggle">
+        <button class="seg-btn" data-basemap="dark">Dark</button>
+        <button class="seg-btn" data-basemap="light">Light</button>
+        <button class="seg-btn" data-basemap="satellite">Satellite</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">Layers</div>
+      <label class="toggle">
+        <input type="checkbox" id="layer-risk" data-layer="risk" checked>
+        <span class="toggle-dot" style="--c:#ff6b35"></span>
+        <span class="toggle-label">Fire Risk Grid</span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" id="layer-landcover" data-layer="landcover">
+        <span class="toggle-dot" style="--c:#6c757d"></span>
+        <span class="toggle-label">Land Cover (filtered)</span>
+      </label>
+      <label class="toggle">
+        <input type="checkbox" id="layer-alerts" data-layer="alerts" checked>
+        <span class="toggle-dot" style="--c:#ffd166"></span>
+        <span class="toggle-label">Recent Alerts</span>
+      </label>
+    </section>
+
+    <section class="panel panel-grow">
+      <div class="panel-title">
+        Zones
+        <span class="panel-count" id="zone-count">0</span>
+      </div>
+      <div class="panel-note">Levels are adaptive to each region's historical FWI baseline — a low FRI in a wet region can rank above a higher FRI in a dry one.</div>
+      <div id="zones-list" class="zones-list"></div>
+      <div id="zones-empty" class="zone-empty">Click a hex on the map to start Zone 1.</div>
+    </section>
+  </aside>
+
+  <main id="map-wrap">
+    <div id="map"></div>
+
+    <div id="topbar">
+      <div class="status-pill">
+        <span class="dot pulse"></span>
+        <span id="status-text">Live</span>
+        <span class="dot-sep">·</span>
+        <span id="last-updated">—</span>
+      </div>
+    </div>
+
+    <div id="legend">
+      <div class="legend-title">Fire Risk Index</div>
+      <div class="legend-rows" id="legend-rows"></div>
+    </div>
+
+    <div id="grid-hint" class="grid-hint" hidden>
+      <span class="grid-hint-icon">⊕</span>
+      <span>Zoom in to view the fire-risk grid</span>
+    </div>
+  </main>
+
+  <aside id="rail-right" class="rail rail-right">
+    <button class="rail-close" id="detail-close" aria-label="Close">×</button>
+    <header class="rail-header">
+      <div class="detail-eyebrow" id="detail-eyebrow">SELECTED CELL</div>
+      <div class="detail-title" id="detail-title">—</div>
+      <div class="detail-coords" id="detail-coords">—</div>
+    </header>
+
+    <section class="panel">
+      <div class="metric-grid">
+        <div class="metric">
+          <div class="metric-label">FRI</div>
+          <div class="metric-value" id="m-fri">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Alert</div>
+          <div class="metric-value" id="m-alert">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Temp</div>
+          <div class="metric-value" id="m-temp">—</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Wind</div>
+          <div class="metric-value" id="m-wind">—</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">Terrain</div>
+      <div class="kv"><span>Land cover</span><span id="m-landcover">—</span></div>
+      <div class="kv"><span>Fire relevant</span><span id="m-relevant">—</span></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">Action</div>
+      <div id="m-action" class="action-text">—</div>
+    </section>
+  </aside>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/h3-js@4.1.0/dist/h3-js.umd.js"></script>
+  <script type="module" src="/static/js/main.js?v=6"></script>
 </body>
 </html>
