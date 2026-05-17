@@ -124,7 +124,7 @@ def calculate_fire_risk(zone_id: str,temperature, wind_speed, humidity, precipit
                                                     dmc_prev=moisture_state["dmc_prev"],
                                                     dc_prev=moisture_state["dc_prev"]
                                                     )
-    save_moisture_state(zone_id, ffmc, dmc, dc)
+    save_moisture_state(zone_id, ffmc, dmc, dc, lon=lon)
     ndvi = 1 - (soil_moisture * 2)  # TODO: replace with actual NDVI from API
     fri = compute_fri(fwi, ndvi)
     level = get_alert_level(fwi, zone_id)

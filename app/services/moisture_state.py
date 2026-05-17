@@ -1,6 +1,6 @@
 from app.database.db import get_connection
 from datetime import datetime, timezone, timedelta
-from app.database.crud.weather import get_latest_weather_for_zone
+
 
 # Canadian Forest Service standard startup defaults (used when no prior reading exists)
 _DEFAULTS = {"ffmc_prev": 85.0, "dmc_prev": 6.0, "dc_prev": 15.0}
@@ -8,19 +8,42 @@ _DEFAULTS = {"ffmc_prev": 85.0, "dmc_prev": 6.0, "dc_prev": 15.0}
 
 def get_moisture_state(zone_id: str) -> dict:
     """
-    Return previous FWI moisture codes for a zone by looking up the most
-    recent weather_reading row. Falls back to CFS startup defaults if none exists.
+    Return previous FWI moisture codes for a zone from the moisture_state table.
+    Falls back to CFS startup defaults if no state exists or if the state is stale.
     """
-    reading = get_latest_weather_for_zone(zone_id)
+    conn = get_connection()
+    cursor = conn.cursor()
 
-    if reading and reading["ffmc"] is not None:
-        return {
-            "ffmc_prev": reading["ffmc"],
-            "dmc_prev":  reading["dmc"],
-            "dc_prev":   reading["dc"],
-        }
+    cursor.execute("""
+        SELECT ffmc_prev, dmc_prev, dc_prev, updated_at
+        FROM moisture_state
+        WHERE zone_id = ?
+    """, (zone_id,))
 
-    return dict(_DEFAULTS)
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        return dict(_DEFAULTS)
+
+    ffmc_prev, dmc_prev, dc_prev, updated_at_raw = row
+
+    try:
+        updated_at = datetime.fromisoformat(updated_at_raw)
+    except (TypeError, ValueError):
+        return dict(_DEFAULTS)
+
+    if updated_at.tzinfo is None:
+        updated_at = updated_at.replace(tzinfo=timezone.utc)
+
+    if datetime.now(timezone.utc) - updated_at > timedelta(hours=36):
+        return dict(_DEFAULTS)
+
+    return {
+        "ffmc_prev": ffmc_prev,
+        "dmc_prev": dmc_prev,
+        "dc_prev": dc_prev,
+    }
 
 
 def save_moisture_state(zone_id: str, ffmc: float, dmc: float, dc: float, lon: float = 0.0):
@@ -39,7 +62,9 @@ def save_moisture_state(zone_id: str, ffmc: float, dmc: float, dc: float, lon: f
     row = cursor.fetchone()
 
     if row:
-        updated_at = datetime.fromisoformat(row[0]).replace(tzinfo=timezone.utc)
+        updated_at = datetime.fromisoformat(row[0])
+        if updated_at.tzinfo is None:
+            updated_at = updated_at.replace(tzinfo=timezone.utc)
         updated_local_date = updated_at.astimezone(local_tz).date()
         if updated_local_date == local_today:
             conn.close()
@@ -53,6 +78,6 @@ def save_moisture_state(zone_id: str, ffmc: float, dmc: float, dc: float, lon: f
             dmc_prev   = excluded.dmc_prev,
             dc_prev    = excluded.dc_prev,
             updated_at = excluded.updated_at
-    """, (zone_id, ffmc, dmc, dc, datetime.utcnow()))
+    """, (zone_id, ffmc, dmc, dc, datetime.now(timezone.utc).isoformat()))
     conn.commit()
     conn.close()
